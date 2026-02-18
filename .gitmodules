@@ -1,0 +1,3 @@
+[submodule "the_assembly_core"]
+	path = the_assembly_core
+	url = git@github.com:rabenknecht/the_assembly_core.git
