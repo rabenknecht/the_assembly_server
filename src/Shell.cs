@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Net;
+using System.Text.Json;
+using TheAssembly.Core;
 
 namespace TheAssembly.Server;
 
@@ -48,12 +50,12 @@ public class Shell
 
     private static void Run(string configFile)
     {
-        string configData;
+        string rawConfigData;
         Config config;
 
         try
         {
-            configData = File.ReadAllText(configFile);
+            rawConfigData = File.ReadAllText(configFile);
         }
         catch (Exception e)
         {
@@ -63,7 +65,7 @@ public class Shell
 
         try
         {
-            config = JsonSerializer.Deserialize<Config>(configData);
+            config = JsonSerializer.Deserialize<Config>(rawConfigData);
         }
         catch (Exception e)
         {
@@ -73,6 +75,14 @@ public class Shell
 
         Console.WriteLine($"Successfully read configuration file at {configFile}");
 
-        var databank = new TheAssembly.Core.FileBasedDatabank();
+        var server = new HttpListener();
+        foreach (var prefix in config.ServerPrefixes) server.Prefixes.Add(prefix);
+        server.Start();
+
+
+        while (true)
+        {
+            var context = server.GetContext();
+        }
     }
 }

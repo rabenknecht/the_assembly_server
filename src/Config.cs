@@ -5,10 +5,17 @@ namespace TheAssembly.Server;
 public struct Config
 {
     public string DatabankPath;
-    public int Port;
+    public string[] ServerPrefixes;
 
 
-    public static Config Default => new() { DatabankPath = "databank", Port = 2302 };
+    public static Config Default => new()
+    {
+        DatabankPath = "databank",
+        ServerPrefixes = new []
+        {
+            "http://localhost:2302"
+        }
+    };
 
     public static string DefaultJson => JsonSerializer.Serialize(Default);
 }
