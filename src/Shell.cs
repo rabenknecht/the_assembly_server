@@ -4,29 +4,50 @@ namespace TheAssembly.Server;
 
 public class Shell
 {
-    private const string NEWCONFIG_IDENTIFIER = "--newConfig";
     private const string DEFAULT_CONFIG = "config.json";
+
 
     public static void Main(string[] args)
     {
-        if (args.Any(s => s == NEWCONFIG_IDENTIFIER))
+        if ((args.Length == 1 || args.Length == 2) && args[0] == "newconfig")
         {
-            var newConfigFile = args.ExtractOption(NEWCONFIG_IDENTIFIER).Or(DEFAULT_CONFIG);
+            NewConfig(args.GetOr(1, DEFAULT_CONFIG));
+        }
+        else if ((args.Length == 1 || args.Length == 2) && args[0] == "run")
+        {
+            Run(args.GetOr(1, DEFAULT_CONFIG));
+        }
+        else
+        {
+            PrintHelp();
+        }
+    }
 
-            try
-            {
-                File.WriteAllText(newConfigFile, Config.DefaultJson);
-            }
-            catch (Exception e)
-            {
-                Console.Error.WriteLine($"Exception while writing the configuration file ({newConfigFile}):\n{e}");
-            }
 
+    private static void PrintHelp()
+    {
+        Console.WriteLine("TODO: This should be a helptext. If you see this, hit Rabenknecht with a shovel so they actually write this shit");
+    }
+
+
+    private static void NewConfig(string newConfigFile)
+    {
+        try
+        {
+            File.WriteAllText(newConfigFile, Config.DefaultJson);
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine($"Exception while writing the configuration file ({newConfigFile}):\n{e}");
             return;
         }
 
+        Console.WriteLine($"Successfully created default configuration file at {newConfigFile}");
+    }
 
-        var configFile = args.GetOr(0, DEFAULT_CONFIG);
+
+    private static void Run(string configFile)
+    {
         string configData;
         Config config;
 
@@ -50,6 +71,8 @@ public class Shell
             return;
         }
 
-        
+        Console.WriteLine($"Successfully read configuration file at {configFile}");
+
+        var databank = new FileBasedDatabank();
     }
 }
