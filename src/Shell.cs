@@ -73,6 +73,6 @@ public class Shell
 
         Console.WriteLine($"Successfully read configuration file at {configFile}");
 
-        var databank = new FileBasedDatabank();
+        var databank = new TheAssembly.Core.FileBasedDatabank();
     }
 }
