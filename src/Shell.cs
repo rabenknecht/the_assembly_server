@@ -7,11 +7,11 @@ namespace TheAssembly.Server;
 public static class Shell
 {
     private const string DEFAULT_CONFIG = "config.json";
-
+    private const string COMMAND_NEWCONFIG = "newconfig";
 
     public static void Main(string[] args)
     {
-        if ((args.Length == 1 || args.Length == 2) && args[0] == "newconfig")
+        if ((args.Length == 1 || args.Length == 2) && args[0] == COMMAND_NEWCONFIG)
         {
             NewConfig(args.GetOr(1, DEFAULT_CONFIG));
         }
@@ -36,7 +36,7 @@ public static class Shell
     {
         try
         {
-            File.WriteAllText(newConfigFile, Config.DefaultJson);
+            File.WriteAllText(newConfigFile, Config.DefaultSerialized);
         }
         catch (Exception e)
         {
@@ -44,14 +44,14 @@ public static class Shell
             return;
         }
 
-        Console.WriteLine($"Successfully created default configuration file at {newConfigFile}");
+        Console.WriteLine($"Successfully created default configuration file at \"{newConfigFile}\"");
     }
 
 
     private static void SetupAndRun(string configFile)
     {
         string rawConfigData;
-        Config config;
+        Config? config;
 
         try
         {
@@ -65,7 +65,7 @@ public static class Shell
 
         try
         {
-            config = JsonSerializer.Deserialize<Config>(rawConfigData);
+            config = Config.Deserialize(rawConfigData);
         }
         catch (Exception e)
         {
@@ -73,7 +73,20 @@ public static class Shell
             return;
         }
 
-        Console.WriteLine($"Successfully parsed configuration file at {configFile}");
+        if (config == null)
+        {
+            Console.Error.WriteLine($"Parsing config file failed: Illegal json. Use \"{COMMAND_NEWCONFIG}\" to generate a default template for the config file");
+            return;
+        }
+
+        if (File.Exists(config.DatabankPath))
+        {
+            Console.Error.WriteLine($"Databank path of config file is a file!");
+            return;
+        }
+
+        Directory.CreateDirectory(config.DatabankPath);
+        Console.WriteLine($"Successfully parsed configuration file at \"{configFile}\"");
         Run(config);
     }
 
@@ -82,10 +95,16 @@ public static class Shell
     {
         var storage = new Storage(config.DatabankPath);
         var server = new HttpListener();
-        foreach (var prefix in config.ServerPrefixes) server.Prefixes.Add(prefix);
+        foreach (var prefix in config.ServerPrefixes)
+        {
+            // HttpListener does NOT like prefixes not ending with '/'
+            if (!prefix.EndsWith('/')) server.Prefixes.Add(prefix + '/');
+            else server.Prefixes.Add(prefix);
+        }
+
         server.Start();
 
-        Console.WriteLine($"Server online");
+        Console.WriteLine($"Server online. Access me using: " + string.Join(", ", server.Prefixes));
 
         while (true)
         {
@@ -108,7 +127,7 @@ public static class Shell
                 response.StatusCode = (int) HttpStatusCode.NotFound;
             }
             // TODO: Check user authentication, and if user and requested user share at least one group
-            else if (user != null && requestMethod == "get" && localPath.Length == 2
+            else if (requestMethod == "get" && localPath.Length == 2
                 && localPath[0] == "user" && long.TryParse(localPath[1], out requestedId)
                 && storage.TryGetEncodedUser(requestedId, out rawData))
             {
