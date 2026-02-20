@@ -4,8 +4,11 @@ namespace TheAssembly.Server;
 
 public struct Config
 {
-    public string DatabankPath;
-    public string[] ServerPrefixes;
+    // "Fun" fact: System.Text.Json *somehow* does not support parsing fields!
+    // I *need* to make them properties. Have not tested if only
+    // a implemented getter is enough...
+    public string DatabankPath { get; set; }
+    public string[] ServerPrefixes { get; set; }
 
 
     public static Config Default => new()
