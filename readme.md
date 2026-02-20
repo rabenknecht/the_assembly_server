@@ -1,0 +1,1 @@
+Take a look at the bash scripts (.sh), they are useful for automatic building and running of this project.
