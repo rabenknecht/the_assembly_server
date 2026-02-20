@@ -4,7 +4,7 @@ using TheAssembly.Core;
 
 namespace TheAssembly.Server;
 
-public class Shell
+public static class Shell
 {
     private const string DEFAULT_CONFIG = "config.json";
 
@@ -17,7 +17,7 @@ public class Shell
         }
         else if ((args.Length == 1 || args.Length == 2) && args[0] == "run")
         {
-            Run(args.GetOr(1, DEFAULT_CONFIG));
+            SetupAndRun(args.GetOr(1, DEFAULT_CONFIG));
         }
         else
         {
@@ -48,7 +48,7 @@ public class Shell
     }
 
 
-    private static void Run(string configFile)
+    private static void SetupAndRun(string configFile)
     {
         string rawConfigData;
         Config config;
@@ -73,16 +73,77 @@ public class Shell
             return;
         }
 
-        Console.WriteLine($"Successfully read configuration file at {configFile}");
+        Console.WriteLine($"Successfully parsed configuration file at {configFile}");
+        Run(config);
+    }
 
+
+    private static void Run(Config config)
+    {
+        var storage = new Storage(config.DatabankPath);
         var server = new HttpListener();
         foreach (var prefix in config.ServerPrefixes) server.Prefixes.Add(prefix);
         server.Start();
 
+        Console.WriteLine($"Server online");
 
         while (true)
         {
+            // We will multithread at a later point
             var context = server.GetContext();
+            var request = context.Request;
+            var response = context.Response;
+            var user = storage.GetUser(ExtractUserId(request));
+            // TODO: User Authentication
+
+            var localPath = request.Url?.AbsolutePath[1..].ToLower().Split("/") ?? [];
+            var requestMethod = request.HttpMethod.ToLower();
+
+            long requestedId;
+            byte[] rawData;
+            User requestedUser;
+
+            if (localPath == null)
+            {
+                response.StatusCode = (int) HttpStatusCode.NotFound;
+            }
+            // TODO: Check user authentication, and if user and requested user share at least one group
+            else if (user != null && requestMethod == "get" && localPath.Length == 2
+                && localPath[0] == "user" && long.TryParse(localPath[1], out requestedId)
+                && storage.TryGetEncodedUser(requestedId, out rawData))
+            {
+                response.StatusCode = (int) HttpStatusCode.OK;
+                response.OutputStream.Write(rawData);
+            }
+            else if (requestMethod == "post" && localPath.Length == 3
+                && localPath[0] == "user" && localPath[2] == "default"
+                && long.TryParse(localPath[1], out requestedId))
+            {
+                storage.UpdateUser(requestedId, new User(requestedId, "DefaultUser", []));
+                response.StatusCode = (int) HttpStatusCode.OK;
+            }
+            else if (requestMethod == "post" && localPath.Length == 2
+                && localPath[0] == "user" && long.TryParse(localPath[1], out requestedId)
+                && User.TryDeserialize(request.InputStream, out requestedUser))
+            {
+                storage.UpdateUser(requestedId, requestedUser);
+                response.StatusCode = (int) HttpStatusCode.OK;
+            }
+            else
+            {
+                response.StatusCode = (int) HttpStatusCode.NotFound;
+            }
+
+            response.Close();
         }
+    }
+
+
+    private static long? ExtractUserId(HttpListenerRequest request)
+    {
+        var cookie = request.Cookies.SingleOrDefault(c => c != null && c.Name == "userId");
+        if (cookie == null) return null;
+        if (long.TryParse(cookie.Value, out var userId)) return userId;
+        return null;
     }
 }
