@@ -5,9 +5,9 @@ namespace TheAssembly.Server;
 
 public class User
 {
-    public long Id;
-    public string Name = "";
-    public long[] BelongsToGroupIds = [];
+    public long Id { get; set; }
+    public string Name { get; set; } = "";
+    public long[] BelongsToGroupIds { get; set; } = [];
 
 
     public User() {}
