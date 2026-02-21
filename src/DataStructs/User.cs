@@ -40,6 +40,9 @@ public class User
     }
 
 
+    public static byte[] Serialize(User user) => user.Serialize();
+
+
     public byte[] Serialize()
     {
         return Encoding.UTF8.GetBytes(JsonSerializer.Serialize(this));

@@ -4,6 +4,8 @@ namespace TheAssembly.Server;
 
 public class Storage<TId, TStored>
 {
+    /// <param name="idToString">Defaults to object.ToString()</param>
+    /// <exception cref="ArgumentException">If basePath is not a directory</exception>
     public Storage(string basePath,
         Func<TStored, byte[]> serializer,
         Func<byte[], TStored> deserializer,

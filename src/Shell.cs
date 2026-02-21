@@ -93,7 +93,11 @@ public static class Shell
 
     private static void Run(Config config)
     {
-        var storage = new Storage(config.DatabankPath);
+        var userStorage = new Storage<long, User>(
+            Path.Combine(config.DatabankPath, "users"),
+            User.Serialize,
+            User.Deserialize!,
+            long.Parse);
         var server = new HttpListener();
         foreach (var prefix in config.ServerPrefixes)
         {
@@ -101,9 +105,7 @@ public static class Shell
             if (!prefix.EndsWith('/')) server.Prefixes.Add(prefix + '/');
             else server.Prefixes.Add(prefix);
         }
-
         server.Start();
-
         Console.WriteLine($"Server online. Access me using: " + string.Join(", ", server.Prefixes));
 
         while (true)
@@ -112,7 +114,8 @@ public static class Shell
             var context = server.GetContext();
             var request = context.Request;
             var response = context.Response;
-            var user = storage.GetUser(ExtractUserId(request));
+            var userId = ExtractUserId(request);
+            var user = userId != null ? userStorage.Get(userId.Value) : null;
             // TODO: User Authentication
 
             var localPath = request.Url?.AbsolutePath[1..].ToLower().Split("/") ?? [];
@@ -129,7 +132,7 @@ public static class Shell
             // TODO: Check user authentication, and if user and requested user share at least one group
             else if (requestMethod == "get" && localPath.Length == 2
                 && localPath[0] == "user" && long.TryParse(localPath[1], out requestedId)
-                && storage.TryGetEncodedUser(requestedId, out rawData))
+                && userStorage.TryGetEncoded(requestedId, out rawData))
             {
                 response.StatusCode = (int) HttpStatusCode.OK;
                 response.OutputStream.Write(rawData);
@@ -138,14 +141,14 @@ public static class Shell
                 && localPath[0] == "user" && localPath[2] == "default"
                 && long.TryParse(localPath[1], out requestedId))
             {
-                storage.UpdateUser(requestedId, new User(requestedId, "DefaultUser", []));
+                userStorage.Update(requestedId, new User(requestedId, "DefaultUser", []));
                 response.StatusCode = (int) HttpStatusCode.OK;
             }
             else if (requestMethod == "post" && localPath.Length == 2
                 && localPath[0] == "user" && long.TryParse(localPath[1], out requestedId)
                 && User.TryDeserialize(request.InputStream, out requestedUser))
             {
-                storage.UpdateUser(requestedId, requestedUser);
+                userStorage.Update(requestedId, requestedUser);
                 response.StatusCode = (int) HttpStatusCode.OK;
             }
             else
