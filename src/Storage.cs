@@ -1,27 +1,35 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 
 namespace TheAssembly.Server;
 
-public class Storage
+public class Storage<TId, TStored>
 {
-
-    public Storage(string basePath)
+    public Storage(string basePath,
+        Func<TStored, byte[]> serializer,
+        Func<byte[], TStored> deserializer,
+        Func<string, TId> idParser,
+        Func<TId, string>? idToString = null)
     {
+        ArgumentNullException.ThrowIfNull(basePath);
+        ArgumentNullException.ThrowIfNull(idParser);
+        ArgumentNullException.ThrowIfNull(serializer);
+        ArgumentNullException.ThrowIfNull(deserializer);
         if (!Directory.Exists(basePath)) throw new ArgumentException($"No directory with path {basePath} exists");
         _basePath = basePath;
+        _serializer = serializer;
+        _deserializer = deserializer;
+        _idParser = idParser;
+        _idToString = idToString ?? (i => i!.ToString()!);
     }
 
 
-    public IEnumerable<long> UserIds =>
-        Directory.GetFiles(UserDirectoryPath)
-            .Where(s => long.TryParse(s, out _))
-            .Select(long.Parse);
+    public IEnumerable<TId> Ids => Directory.GetFiles(_basePath).Select(_idParser);
 
 
-    public bool TryGetEncodedUser(long userId, [NotNull] out byte[] result)
+    /// <param name="id">Cannot be null</param>
+    public bool TryGetEncoded(TId id, [NotNull] out byte[] result)
     {
-        var path = UserFilePath(userId);
+        var path = InstanceFilePath(id);
 
         if (!File.Exists(path))
         {
@@ -37,58 +45,64 @@ public class Storage
     }
 
 
-    public byte[]? GetEncodedUser(long userId)
+    /// <param name="id">Cannot be null</param>
+    public byte[]? GetEncoded(TId id)
     {
-        if (TryGetEncodedUser(userId, out var result)) return result;
+        if (TryGetEncoded(id, out var result)) return result;
         return null;
     }
 
 
-    public bool TryGetUser(long userId, out User user)
+    /// <param name="id">Cannot be null</param>
+    /// <param name="stored">Can be null when the method returns false</param>
+    /// <returns></returns>
+    public bool TryGet(TId id, out TStored stored)
     {
-        if (!TryGetEncodedUser(userId, out var rawData))
+        if (!TryGetEncoded(id, out var rawData))
         {
-            user = new User();
+            stored = default!;
             return false;
         }
 
-        user = User.Deserialize(rawData)!;
-        if (user != null) return true;
-        user = new User();
-        return false;
+        stored = _deserializer(rawData);
+        return true;
     }
 
 
-    public User? GetUser(long userId)
+    /// <param name="id">Cannot be null</param>
+    public TStored? Get(TId id)
     {
-        var rawData = GetEncodedUser(userId);
-        if (rawData == null) return null;
-        return User.Deserialize(rawData);
-    }
-
-
-    public User? GetUser(long? userId)
-    {
-        if (userId == null) return null;
-        return GetUser(userId.Value);
+        var rawData = GetEncoded(id);
+        if (rawData == null) return default;
+        return _deserializer(rawData);
     }
 
 
     /// <summary>
-    /// Saves a new User instance on userId.
-    /// Replaces the old instance if a User with the passed userId already exists.
-    /// Updates the id of the passed User to be equal to the passed userId.
+    /// Saves a new instance on id.
+    /// Replaces the old instance if a instance with the passed id already exists.
     /// </summary>
-    public void UpdateUser(long userId, User user)
+    /// <param name="id">Cannot be null</param>
+    public void Update(TId id, TStored stored)
     {
-        user.Id = userId;
-        var path = UserFilePath(userId);
-        var rawData = JsonSerializer.Serialize(user);
-        File.WriteAllText(path, rawData);
+        var path = InstanceFilePath(id);
+        var rawData = _serializer(stored);
+        File.WriteAllBytes(path, rawData);
     }
 
 
+    private readonly Func<TStored, byte[]> _serializer;
+    private readonly Func<byte[], TStored> _deserializer;
+    private readonly Func<string, TId> _idParser;
+    private readonly Func<TId, string> _idToString;
     private readonly string _basePath;
-    private string UserDirectoryPath => Path.Combine(_basePath, "userData");
-    private string UserFilePath(long userId) => Path.Combine(UserDirectoryPath, userId.ToString());
+
+    /// <param name="id">The id of the instance those file path should be returned</param>
+    /// <returns>The path to the file containing the instance with the passed id</returns>
+    private string InstanceFilePath(TId id)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+        var idString = _idToString(id) ?? throw new NullReferenceException("idToString result is null");
+        return Path.Combine(_basePath, idString);
+    }
 }
