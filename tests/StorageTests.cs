@@ -15,7 +15,7 @@ public class StorageTests : TestBase
             x => int.Parse(Encoding.UTF8.GetString(x)),
             long.Parse);
 
-        storage.Update(83751, 2);
+        Assert.IsTrue(storage.TryUpdate(83751, 2));
 
         var expected = 2;
         var actual = storage.Get(83751);
@@ -63,7 +63,7 @@ public class StorageTests : TestBase
             x => int.Parse(Encoding.UTF8.GetString(x)),
             long.Parse);
 
-        storage.Update(-1000, -50);
+        Assert.IsTrue(storage.TryUpdate(-1000, -50));
 
         var expectedReturn = true;
         var expectedOuted = -50;
@@ -82,8 +82,8 @@ public class StorageTests : TestBase
             x => int.Parse(Encoding.UTF8.GetString(x)),
             long.Parse);
 
-        storage.Update(100, 2);
-        storage.Update(100, 3);
+        Assert.IsTrue(storage.TryUpdate(100, 2));
+        Assert.IsTrue(storage.TryUpdate(100, 3));
 
         var expected = 3;
         var actual = storage.Get(100);
@@ -100,7 +100,7 @@ public class StorageTests : TestBase
             x => int.Parse(Encoding.UTF8.GetString(x)),
             long.Parse);
 
-        storage.Update(-1, 3);
+        Assert.IsTrue(storage.TryUpdate(-1, 3));
 
         storage = new Storage<long, int>(
             TestDir,

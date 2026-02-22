@@ -47,35 +47,10 @@ public class UserServer
             var localPath = request.Url?.AbsolutePath[1..].ToLower().Split("/") ?? [];
             var requestMethod = request.HttpMethod.ToLower();
 
-            long requestedId;
-            byte[] rawData;
-            User requestedUser;
-
             if (localPath == null)
             {
                 response.StatusCode = (int) HttpStatusCode.NotFound;
-            }
-            else if (requestMethod == "get" && localPath.Length == 2
-                && localPath[0] == "user" && long.TryParse(localPath[1], out requestedId)
-                && _storage.TryGetEncoded(requestedId, out rawData))
-            {
-                response.StatusCode = (int) HttpStatusCode.OK;
-                response.OutputStream.Write(rawData);
-            }
-            else if (requestMethod == "post" && localPath.Length == 3
-                && localPath[0] == "user" && localPath[2] == "default"
-                && long.TryParse(localPath[1], out requestedId))
-            {
-                _storage.Update(requestedId, new User(requestedId, "DefaultUser", []));
-                response.StatusCode = (int) HttpStatusCode.OK;
-            }
-            else if (requestMethod == "post" && localPath.Length == 2
-                && localPath[0] == "user" && long.TryParse(localPath[1], out requestedId)
-                && User.TryDeserialize(request.InputStream, out requestedUser))
-            {
-                _storage.Update(requestedId, requestedUser);
-                response.StatusCode = (int) HttpStatusCode.OK;
-            }
+            } // TODO
             else
             {
                 response.StatusCode = (int) HttpStatusCode.NotFound;
