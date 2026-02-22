@@ -100,4 +100,27 @@ public class StorageTests
         var actual = storage.Get(100);
         Assert.AreEqual(expected, actual);
     }
+
+
+    [TestMethod]
+    public void _2_UpdateGetPersistent()
+    {
+        var storage = new Storage<long, int>(
+            TestDir,
+            x => Encoding.UTF8.GetBytes(x.ToString()),
+            x => int.Parse(Encoding.UTF8.GetString(x)),
+            long.Parse);
+
+        storage.Update(-1, 3);
+
+        storage = new Storage<long, int>(
+            TestDir,
+            x => Encoding.UTF8.GetBytes(x.ToString()),
+            x => int.Parse(Encoding.UTF8.GetString(x)),
+            long.Parse);
+
+        var expected = 3;
+        var actual = storage.Get(-1);
+        Assert.AreEqual(expected, actual);
+    }
 }
