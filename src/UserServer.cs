@@ -2,6 +2,10 @@ using System.Net;
 
 namespace TheAssembly.Server;
 
+
+/// <summary>
+/// GET on BASEURL/{id} responds with the serialized User.
+/// </summary>
 public class UserServer
 {
     public UserServer(string url, UserStorage storage) : this([url], storage) {}
@@ -79,6 +83,15 @@ public class UserServer
 
             response.Close();
         }
+    }
+
+
+    public bool IsRunning() => _listener.IsListening;
+
+
+    public void StopIfRunning()
+    {
+        if (IsRunning()) _listener.Stop();
     }
 
 
