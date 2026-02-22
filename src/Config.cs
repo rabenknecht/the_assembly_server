@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 
 namespace TheAssembly.Server;
 
@@ -9,7 +8,7 @@ public class Config
     // I *need* to make them properties. Have not tested if only
     // a implemented getter is enough...
     public string DatabankPath { get; set; }
-    public string[] ServerPrefixes { get; set; }
+    public string[] UrlPrefixes { get; set; }
 
 
     public static Config? Deserialize(string from) => JsonSerializer.Deserialize<Config>(from);
@@ -18,9 +17,9 @@ public class Config
     public static Config Default => new()
     {
         DatabankPath = "databank",
-        ServerPrefixes = new []
+        UrlPrefixes = new []
         {
-            "http://localhost:2302"
+            "http://localhost:2302/"
         }
     };
 

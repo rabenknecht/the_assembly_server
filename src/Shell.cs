@@ -83,7 +83,6 @@ public static class Shell
             return;
         }
 
-        Directory.CreateDirectory(config.DatabankPath);
         Console.WriteLine($"Successfully parsed configuration file at \"{configFile}\"");
         Run(config);
     }
@@ -91,75 +90,11 @@ public static class Shell
 
     private static void Run(Config config)
     {
-        var userStorage = new UserStorage(Path.Combine(config.DatabankPath, "users"));
-        var server = new HttpListener();
-        foreach (var prefix in config.ServerPrefixes)
-        {
-            // HttpListener does NOT like prefixes not ending with '/'
-            if (!prefix.EndsWith('/')) server.Prefixes.Add(prefix + '/');
-            else server.Prefixes.Add(prefix);
-        }
-        server.Start();
-        Console.WriteLine($"Server online. Access me using: " + string.Join(", ", server.Prefixes));
+        var userStorageDir = Path.Combine(config.DatabankPath, "userData");
+        Directory.CreateDirectory(userStorageDir);
 
-        while (true)
-        {
-            // We will multithread at a later point
-            var context = server.GetContext();
-            var request = context.Request;
-            var response = context.Response;
-            var userId = ExtractUserId(request);
-            var user = userId != null ? userStorage.Get(userId.Value) : null;
-            // TODO: User Authentication
-
-            var localPath = request.Url?.AbsolutePath[1..].ToLower().Split("/") ?? [];
-            var requestMethod = request.HttpMethod.ToLower();
-
-            long requestedId;
-            byte[] rawData;
-            User requestedUser;
-
-            if (localPath == null)
-            {
-                response.StatusCode = (int) HttpStatusCode.NotFound;
-            }
-            // TODO: Check user authentication, and if user and requested user share at least one group
-            else if (requestMethod == "get" && localPath.Length == 2
-                && localPath[0] == "user" && long.TryParse(localPath[1], out requestedId)
-                && userStorage.TryGetEncoded(requestedId, out rawData))
-            {
-                response.StatusCode = (int) HttpStatusCode.OK;
-                response.OutputStream.Write(rawData);
-            }
-            else if (requestMethod == "post" && localPath.Length == 3
-                && localPath[0] == "user" && localPath[2] == "default"
-                && long.TryParse(localPath[1], out requestedId))
-            {
-                userStorage.Update(requestedId, new User(requestedId, "DefaultUser", []));
-                response.StatusCode = (int) HttpStatusCode.OK;
-            }
-            else if (requestMethod == "post" && localPath.Length == 2
-                && localPath[0] == "user" && long.TryParse(localPath[1], out requestedId)
-                && User.TryDeserialize(request.InputStream, out requestedUser))
-            {
-                userStorage.Update(requestedId, requestedUser);
-                response.StatusCode = (int) HttpStatusCode.OK;
-            }
-            else
-            {
-                response.StatusCode = (int) HttpStatusCode.NotFound;
-            }
-
-            response.Close();
-        }
-    }
-
-
-    private static long? ExtractUserId(HttpListenerRequest request)
-    {
-        var cookie = request.Cookies.SingleOrDefault(c => c != null && c.Name == "userId");
-        if (cookie == null) return null;
-        if (long.TryParse(cookie.Value, out var userId)) return userId;
-        return null;
+        var userStorage = new UserStorage(Path.Combine(config.DatabankPath, "userData"));
+        var userServer = new UserServer(config.UrlPrefixes.Select(u => u + "userData/"), userStorage);
+        userServer.RunForever(); // userServer is the only server for now, no multithread necessary
     }
 }
