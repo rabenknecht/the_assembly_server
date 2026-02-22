@@ -3,19 +3,19 @@ using System.Diagnostics.CodeAnalysis;
 namespace TheAssembly.Server;
 
 
-public class Storage
+public class StorageOnFile
 {
     public static bool IsIdStringLegal(string? idString) =>
         idString != null && idString.All(c => char.IsAsciiLetterOrDigit(c) || c == '-' || c == '_' || c == ' ');
 }
 
 
-public class Storage<TId, TStored>
+public class StorageOnFile<TId, TStored>
 {
     /// <param name="idToString">Defaults to object.ToString(). A id will never be updated or getted if no
     /// valid idString is returned. See Storage.IsIdStringLegal()</param>
     /// <exception cref="ArgumentException">If basePath is not a directory</exception>
-    public Storage(string basePath,
+    public StorageOnFile(string basePath,
         Func<TStored, byte[]> serializer,
         Func<byte[], TStored> deserializer,
         Func<string, TId> idParser,
@@ -115,7 +115,7 @@ public class Storage<TId, TStored>
         ArgumentNullException.ThrowIfNull(id);
 
         var idString = _idToString(id);
-        if (Storage.IsIdStringLegal(idString)) return false;
+        if (StorageOnFile.IsIdStringLegal(idString)) return false;
 
         path = Path.Combine(_basePath, idString);
         return true;

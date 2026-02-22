@@ -9,7 +9,7 @@ public class StorageTests : TestBase
     [TestMethod]
     public void _1_UpdateGet()
     {
-        var storage = new Storage<long, int>(
+        var storage = new StorageOnFile<long, int>(
             TestDir,
             x => Encoding.UTF8.GetBytes(x.ToString()),
             x => int.Parse(Encoding.UTF8.GetString(x)),
@@ -26,7 +26,7 @@ public class StorageTests : TestBase
     [TestMethod]
     public void _1_GetNonExisting()
     {
-        var storage = new Storage<long, int>(
+        var storage = new StorageOnFile<long, int>(
             TestDir,
             x => Encoding.UTF8.GetBytes(x.ToString()),
             x => int.Parse(Encoding.UTF8.GetString(x)),
@@ -41,7 +41,7 @@ public class StorageTests : TestBase
     [TestMethod]
     public void _1_TryGetNonExisting()
     {
-        var storage = new Storage<long, int>(
+        var storage = new StorageOnFile<long, int>(
             TestDir,
             x => Encoding.UTF8.GetBytes(x.ToString()),
             x => int.Parse(Encoding.UTF8.GetString(x)),
@@ -57,7 +57,7 @@ public class StorageTests : TestBase
     [TestMethod]
     public void _1_UpdateTryGet()
     {
-        var storage = new Storage<long, int>(
+        var storage = new StorageOnFile<long, int>(
             TestDir,
             x => Encoding.UTF8.GetBytes(x.ToString()),
             x => int.Parse(Encoding.UTF8.GetString(x)),
@@ -76,7 +76,7 @@ public class StorageTests : TestBase
     [TestMethod]
     public void _2_OverwrittingUpdateGet()
     {
-        var storage = new Storage<long, int>(
+        var storage = new StorageOnFile<long, int>(
             TestDir,
             x => Encoding.UTF8.GetBytes(x.ToString()),
             x => int.Parse(Encoding.UTF8.GetString(x)),
@@ -94,7 +94,7 @@ public class StorageTests : TestBase
     [TestMethod]
     public void _2_UpdateGetPersistent()
     {
-        var storage = new Storage<long, int>(
+        var storage = new StorageOnFile<long, int>(
             TestDir,
             x => Encoding.UTF8.GetBytes(x.ToString()),
             x => int.Parse(Encoding.UTF8.GetString(x)),
@@ -102,7 +102,7 @@ public class StorageTests : TestBase
 
         Assert.IsTrue(storage.TryUpdate(-1, 3));
 
-        storage = new Storage<long, int>(
+        storage = new StorageOnFile<long, int>(
             TestDir,
             x => Encoding.UTF8.GetBytes(x.ToString()),
             x => int.Parse(Encoding.UTF8.GetString(x)),
