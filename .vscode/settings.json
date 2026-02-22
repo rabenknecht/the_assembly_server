@@ -1,0 +1,7 @@
+{
+    "dotrush.roslyn.projectOrSolutionFiles": [
+        "/home/shitbrick/CodingProjects/the_assembly/the_assembly_server/the_assembly_core/the_assembly_core.csproj",
+        "/home/shitbrick/CodingProjects/the_assembly/the_assembly_server/tests/the_assembly_server_tests.csproj",
+        "/home/shitbrick/CodingProjects/the_assembly/the_assembly_server/src/the_assembly_server.csproj"
+    ]
+}
