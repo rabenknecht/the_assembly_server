@@ -4,19 +4,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace TheAssembly.Server.Test;
 
 [TestClass]
-public class StorageTests
+public class StorageTests : TestBase
 {
-    private string TestDir = "/tmp/the_assembly_tests/server/storage_tests/";
-
-
-    [TestInitialize]
-    public void TestDirInit()
-    {
-        if (Directory.Exists(TestDir)) Directory.Delete(TestDir, true);
-        Directory.CreateDirectory(TestDir);
-    }
-
-
     [TestMethod]
     public void _1_UpdateGet()
     {
