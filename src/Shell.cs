@@ -91,11 +91,7 @@ public static class Shell
 
     private static void Run(Config config)
     {
-        var userStorage = new Storage<long, User>(
-            Path.Combine(config.DatabankPath, "users"),
-            User.Serialize,
-            User.Deserialize!,
-            long.Parse);
+        var userStorage = new UserStorage(Path.Combine(config.DatabankPath, "users"));
         var server = new HttpListener();
         foreach (var prefix in config.ServerPrefixes)
         {

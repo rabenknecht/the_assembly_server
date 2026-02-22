@@ -56,7 +56,8 @@ public class Storage<TId, TStored>
 
 
     /// <param name="id">Cannot be null</param>
-    /// <param name="stored">Can be null when the method returns false</param>
+    /// <param name="stored">No gurantees should be made about the result when false is returned.
+    /// Can be null when the method returns false</param>
     /// <returns></returns>
     public bool TryGet(TId id, out TStored stored)
     {
