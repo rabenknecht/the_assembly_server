@@ -7,8 +7,8 @@ public class Config
     // "Fun" fact: System.Text.Json *somehow* does not support parsing fields!
     // I *need* to make them properties. Have not tested if only
     // a implemented getter is enough...
-    public string DatabankPath { get; set; }
-    public string[] UrlPrefixes { get; set; }
+    public string DatabankPath { get; set; } = "";
+    public string[] UrlPrefixes { get; set; } = [];
 
 
     public static Config? Deserialize(string from) => JsonSerializer.Deserialize<Config>(from);

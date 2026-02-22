@@ -38,9 +38,6 @@ public class UserServer
             var context = _listener.GetContext();
             var request = context.Request;
             var response = context.Response;
-            var userId = request.ExtractUserId();
-            var user = userId != null ? _storage.Get(userId.Value) : null;
-            // TODO: User Authentication
             // TODO: Check user authentication, and if user and requested user share at least one group
 
             var localPath = request.Url?.AbsolutePath[1..].ToLower().Split("/") ?? [];
