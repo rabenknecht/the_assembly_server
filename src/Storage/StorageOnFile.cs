@@ -3,13 +3,33 @@ using System.Diagnostics.CodeAnalysis;
 namespace TheAssembly.Server;
 
 
+/// <summary>
+/// This class stores objects in files in a dedicated directory.
+/// The stored objects are accessed via an id object.
+/// <para/>
+/// This class assumes that the directory is not manually modified from outside,
+/// neither during runtime or between runs to preserve the data stored on the last run.
+/// </summary>
 public class StorageOnFile
 {
+    /// <summary>
+    /// This class needs to convert the passed id into a string to determine the saving location
+    /// for the passed object. This method is used to ensure the resulting string is legal, i.e.
+    /// that the string is a valid file name and does not contain characters that could enable
+    /// directory attacks.
+    /// </summary>
     public static bool IsIdStringLegal(string? idString) =>
         idString != null && idString.All(c => char.IsAsciiLetterOrDigit(c) || c == '-' || c == '_' || c == ' ');
 }
 
 
+/// <summary>
+/// This class stores objects in files in a dedicated directory.
+/// The stored objects are accessed via an id object.
+/// <para/>
+/// This class assumes that the directory is not manually modified from outside,
+/// neither during runtime or between runs to preserve the data stored on the last run.
+/// </summary>
 public class StorageOnFile<TId, TStored>
 {
     /// <param name="idToString">Defaults to object.ToString(). A id will never be updated or getted if no
@@ -94,6 +114,7 @@ public class StorageOnFile<TId, TStored>
     /// <param name="id">Cannot be null</param>
     public bool TryUpdate(TId id, TStored stored)
     {
+        // TODO: Infer id from TStored!
         if (!TryInstanceFilePath(id, out var path)) return false;
         var rawData = _serializer(stored);
         File.WriteAllBytes(path, rawData);
