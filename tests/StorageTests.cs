@@ -1,13 +1,27 @@
 ﻿using System.Text;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace TheAssembly.Server.Test;
 
+[TestClass]
 public class StorageTests
 {
+    private string TestDir = "/tmp/the_assembly_tests/server/storage_tests/";
+
+
+    [TestInitialize]
+    public void TestDirInit()
+    {
+        if (Directory.Exists(TestDir)) Directory.Delete(TestDir, true);
+        Directory.CreateDirectory(TestDir);
+    }
+
+
+    [TestMethod]
     public void _1_UpdateGet()
     {
         var storage = new Storage<long, int>(
-            TestUtil.GenerateTestDir(),
+            TestDir,
             x => Encoding.UTF8.GetBytes(x.ToString()),
             x => int.Parse(Encoding.UTF8.GetString(x)),
             long.Parse);
@@ -16,46 +30,46 @@ public class StorageTests
 
         var expected = 2;
         var actual = storage.Get(83751);
-
-        // TODO: Assert
+        Assert.AreEqual(expected, actual);
     }
 
 
+    [TestMethod]
     public void _1_GetNonExisting()
     {
         var storage = new Storage<long, int>(
-            TestUtil.GenerateTestDir(),
+            TestDir,
             x => Encoding.UTF8.GetBytes(x.ToString()),
             x => int.Parse(Encoding.UTF8.GetString(x)),
             long.Parse);
 
         var expected = 0;
         var actual = storage.Get(83751);
-
-        // TODO: Assert
+        Assert.AreEqual(expected, actual);
     }
 
 
+    [TestMethod]
     public void _1_TryGetNonExisting()
     {
         var storage = new Storage<long, int>(
-            TestUtil.GenerateTestDir(),
+            TestDir,
             x => Encoding.UTF8.GetBytes(x.ToString()),
             x => int.Parse(Encoding.UTF8.GetString(x)),
             long.Parse);
 
+        // Do NOT test the out-ed stored value, as we state that the return value is not guranteed
         var expectedReturn = false;
         var actualReturn = storage.TryGet(78472922, out _);
-
-        // Do NOT test the out-ed stored value, as we state that the return value is not guranteed
-        // TODO: Assert
+        Assert.AreEqual(expectedReturn, actualReturn);
     }
 
 
+    [TestMethod]
     public void _1_UpdateTryGet()
     {
         var storage = new Storage<long, int>(
-            TestUtil.GenerateTestDir(),
+            TestDir,
             x => Encoding.UTF8.GetBytes(x.ToString()),
             x => int.Parse(Encoding.UTF8.GetString(x)),
             long.Parse);
@@ -65,16 +79,16 @@ public class StorageTests
         var expectedReturn = true;
         var expectedOuted = -50;
         var actualReturn = storage.TryGet(-1000, out var actualOuted);
-
-        // Do NOT test the out-ed stored value, as we state that the return value is not guranteed
-        // TODO: Assert
+        Assert.AreEqual(expectedReturn, actualReturn);
+        Assert.AreEqual(expectedOuted, actualOuted);
     }
 
 
+    [TestMethod]
     public void _2_OverwrittingUpdateGet()
     {
         var storage = new Storage<long, int>(
-            TestUtil.GenerateTestDir(),
+            TestDir,
             x => Encoding.UTF8.GetBytes(x.ToString()),
             x => int.Parse(Encoding.UTF8.GetString(x)),
             long.Parse);
@@ -84,7 +98,6 @@ public class StorageTests
 
         var expected = 3;
         var actual = storage.Get(100);
-
-        // TODO: Assert
+        Assert.AreEqual(expected, actual);
     }
 }

@@ -4,6 +4,10 @@
     <ProjectReference Include="..\src\the_assembly_server.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MSTest" Version="4.1.0" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

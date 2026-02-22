@@ -17,6 +17,7 @@ public class Storage<TId, TStored>
         ArgumentNullException.ThrowIfNull(serializer);
         ArgumentNullException.ThrowIfNull(deserializer);
         if (!Directory.Exists(basePath)) throw new ArgumentException($"No directory with path {basePath} exists");
+
         _basePath = basePath;
         _serializer = serializer;
         _deserializer = deserializer;
@@ -40,9 +41,6 @@ public class Storage<TId, TStored>
         }
 
         result = File.ReadAllBytes(path);
-#if DEBUG
-        if (User.Deserialize(result) == null) throw new Exception("Illegal encoding for user");
-#endif
         return true;
     }
 
