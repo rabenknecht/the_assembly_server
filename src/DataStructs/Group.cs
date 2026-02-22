@@ -5,9 +5,10 @@ namespace TheAssembly.Server;
 
 public class Group
 {
-    public string[] ContainsUsers { get; set; } = [];
-    public string[] ContainsEntryIds { get; set; } = [];
     public string Name { get; set; } = "";
+    public string[] ContainsUsers { get; set; } = [];
+    public string[] ContainsEntryIds { get; set; } = []; // Last entry is the active entry
+    public string[] NextQuestionIds { get; set; } = [];
 
 
     public static Group? Deserialize(byte[] from) => JsonSerializer.Deserialize<Group>(from);

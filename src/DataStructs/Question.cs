@@ -6,8 +6,9 @@ namespace TheAssembly.Server;
 public class Question
 {
     // TODO: Allow to auto-add Users of a group to the Question.
-    public string Name { get; }
-    public string[] VoteOptions { get; }
+    public string Id { get; } = "";
+    public string Name { get; } = "";
+    public string[] VoteOptions { get; } = [];
 
 
     public static Question? Deserialize(byte[] from) => JsonSerializer.Deserialize<Question>(from);
