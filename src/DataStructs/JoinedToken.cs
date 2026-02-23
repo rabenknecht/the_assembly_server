@@ -24,7 +24,7 @@ public class JoinedToken
     public JoinedToken(params byte[][] tokens) : this((IEnumerable<byte[]>) tokens) {}
 
 
-    public byte[] GetEncodedToken(int index) => _tokens[index];
+    public IReadOnlyList<byte> GetEncodedToken(int index) => _tokens[index];
 
 
     public int TokenCount() => _tokens.Length;

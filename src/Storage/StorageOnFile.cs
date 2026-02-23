@@ -138,7 +138,7 @@ public class StorageOnFile<TId, TStored>
         var idString = _idToString(id);
         if (!StorageOnFile.IsIdStringLegal(idString)) return false;
 
-        path = Path.Combine(_basePath, idString);
+        path = Path.Combine(_basePath, idString!);
         return true;
     }
 }
