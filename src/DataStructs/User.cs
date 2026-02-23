@@ -23,4 +23,7 @@ public class User
 
 
     public static byte[] Serialize(User user) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(user));
+
+
+    public byte[] Serialize() => Serialize(this);
 }

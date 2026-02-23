@@ -18,4 +18,12 @@ public static class Util
         if (long.TryParse(cookie.Value, out var userId)) return userId;
         return null;
     }
+
+
+    public static T[] SubArray<T>(this T[] array, int startInclusive, int length)
+    {
+        var result = new T[length];
+        Array.Copy(array, startInclusive, result, 0, length);
+        return result;
+    }
 }
