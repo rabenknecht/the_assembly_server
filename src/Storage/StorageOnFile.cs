@@ -136,7 +136,7 @@ public class StorageOnFile<TId, TStored>
         ArgumentNullException.ThrowIfNull(id);
 
         var idString = _idToString(id);
-        if (StorageOnFile.IsIdStringLegal(idString)) return false;
+        if (!StorageOnFile.IsIdStringLegal(idString)) return false;
 
         path = Path.Combine(_basePath, idString);
         return true;
