@@ -5,10 +5,10 @@ namespace TheAssembly.Server;
 
 public class Entry
 {
-    public string Id { get; set; }
-    public string BelongsToGroup { get; set; }
-    public Question Question { get; set; }
-    public UserVote[] Votes { get; set; }
+    public string Id { get; set; } = "";
+    public string BelongsToGroup { get; set; } = "";
+    public Question Question { get; set; } = new Question();
+    public UserVote[] Votes { get; set; } = [];
 
 
     public static Entry? Deserialize(byte[] from) => JsonSerializer.Deserialize<Entry>(from);
