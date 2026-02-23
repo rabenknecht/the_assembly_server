@@ -3,15 +3,12 @@ using System.Net;
 namespace TheAssembly.Server;
 
 
-/// <summary>
-/// GET on BASEURL/{id} responds with the serialized User.
-/// </summary>
-public class UserServer
+public class Server
 {
-    public UserServer(string url, UserStorage storage) : this([url], storage) {}
+    public Server(string url, ServerStorage storage) : this([url], storage) {}
 
 
-    public UserServer(IEnumerable<string> urls, UserStorage storage)
+    public Server(IEnumerable<string> urls, ServerStorage storage)
     {
         _storage = storage;
         _listener = new HttpListener();
@@ -71,5 +68,5 @@ public class UserServer
 
 
     private readonly HttpListener _listener;
-    private readonly UserStorage _storage;
+    private readonly ServerStorage _storage;
 }

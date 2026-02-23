@@ -90,11 +90,8 @@ public static class Shell
 
     private static void Run(Config config)
     {
-        var userStorageDir = Path.Combine(config.DatabankPath, "userData");
-        Directory.CreateDirectory(userStorageDir);
-
-        var userStorage = new UserStorage(Path.Combine(config.DatabankPath, "userData"));
-        var userServer = new UserServer(config.UrlPrefixes.Select(u => u + "userData/"), userStorage);
-        userServer.RunForever(); // userServer is the only server for now, no multithread necessary
+        var storage = new ServerStorage(config.DatabankPath);
+        var server = new Server(config.UrlPrefixes, storage);
+        server.RunForever();
     }
 }
