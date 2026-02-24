@@ -8,10 +8,12 @@ public class ServerStorage
         Questions = new QuestionStorage(Path.Combine(basePath, "questions"));
         Groups = new GroupStorage(Path.Combine(basePath, "groups"));
         Entries = new EntryStorage(Path.Combine(basePath, "entries"));
+        UserPasses = new UserPassStorage(Path.Combine(basePath, "passwords"));
     }
 
     public readonly UserStorage Users;
     public readonly QuestionStorage Questions;
     public readonly GroupStorage Groups;
     public readonly EntryStorage Entries;
+    public readonly UserPassStorage UserPasses;
 }

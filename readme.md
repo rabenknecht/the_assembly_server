@@ -2,3 +2,4 @@ Take a look at the bash scripts (.sh), they are useful for automatic building an
 
 
 https://www.cryptolux.org/images/0/0d/Argon2.pdf Option 9 shows the algorithm with which to choose Argon2 params.
+https://github.com/kmaragon/Konscious.Security.Cryptography seems to be a good Argon2 lib

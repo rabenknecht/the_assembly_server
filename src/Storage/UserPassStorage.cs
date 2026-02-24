@@ -38,6 +38,9 @@ public class UserPassStorage
     }
 
 
+    public bool HasPassword(string user) => _storage.HasEntry(user);
+
+
     private readonly StorageOnFile<string, byte[]> _storage;
     private const int SALT_LENGTH = 16;
 

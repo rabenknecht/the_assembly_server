@@ -39,15 +39,26 @@ public class Server
             var context = _listener.GetContext();
             var request = context.Request;
             var response = context.Response;
-            // TODO: Check user authentication, and if user and requested user share at least one group
 
             var localPath = request.Url?.AbsolutePath[1..].ToLower().Split("/") ?? [];
             var requestMethod = request.HttpMethod.ToLower();
+            var requestTokens = JoinedToken.Deserialize(request.InputStream);
 
             if (localPath == null)
             {
                 response.StatusCode = (int) HttpStatusCode.NotFound;
-            } // TODO
+            }
+
+            // Create new account:
+            else if (localPath.GetOr(0, "") == "join" && requestMethod == "post"
+                && requestTokens.TokenCount() == 1
+                && UserPass.TryDeserialize(requestTokens.GetEncodedToken(0), out var userPass)
+                && !_storage.UserPasses.HasPassword(userPass.User) // We do not want random people to arbitrarily change anyones password lol
+                && _storage.UserPasses.TryUpdate(userPass.User, userPass.Password))
+            {
+                response.StatusCode = (int) HttpStatusCode.OK;
+            }
+
             else
             {
                 response.StatusCode = (int) HttpStatusCode.NotFound;

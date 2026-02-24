@@ -122,6 +122,13 @@ public class StorageOnFile<TId, TStored>
     }
 
 
+    public bool HasEntry(TId id)
+    {
+        if (!TryInstanceFilePath(id, out var path)) return false;
+        return File.Exists(path);
+    }
+
+
     private readonly Func<TStored, byte[]> _serializer;
     private readonly Func<byte[], TStored> _deserializer;
     private readonly Func<string, TId> _idParser;

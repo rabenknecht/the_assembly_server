@@ -24,13 +24,13 @@ public class JoinedToken
     public JoinedToken(params byte[][] tokens) : this((IEnumerable<byte[]>) tokens) {}
 
 
-    public IReadOnlyList<byte> GetEncodedToken(int index) => _tokens[index];
+    public byte[] GetEncodedToken(int index) => _tokens[index];
 
 
     public int TokenCount() => _tokens.Length;
 
 
-    public static JoinedToken? Deserialize(byte[] data)
+    public static JoinedToken Deserialize(byte[] data)
     {
         var tokens = new List<byte[]>();
 
@@ -49,6 +49,14 @@ public class JoinedToken
         tokens.Add(data.SubArray(newTokenStartInclusive, data.Length - newTokenStartInclusive));
 
         return new JoinedToken(tokens);
+    }
+
+
+    public static JoinedToken Deserialize(Stream stream)
+    {
+        using var memStream = new MemoryStream();
+        stream.CopyTo(memStream);
+        return Deserialize(memStream.ToArray());
     }
 
 
@@ -75,5 +83,5 @@ public class JoinedToken
     }
 
 
-    private byte[][] _tokens;
+    private readonly byte[][] _tokens;
 }
