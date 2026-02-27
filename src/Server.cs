@@ -5,12 +5,11 @@ namespace TheAssembly.Server;
 
 public class Server
 {
-    public Server(string url, ServerStorage storage) : this([url], storage) {}
+    public Server(string url, string fileStorage) : this([url], fileStorage) {}
 
 
-    public Server(IEnumerable<string> urls, ServerStorage storage)
+    public Server(IEnumerable<string> urls, string fileStorage)
     {
-        _storage = storage;
         _listener = new HttpListener();
         foreach (var url in urls) _listener.Prefixes.Add(url);
     }
@@ -31,7 +30,7 @@ public class Server
         if (_listener.IsListening) throw new InvalidOperationException("Server is already running!");
 
         _listener.Start();
-        Console.WriteLine("UserServer started. Access me at " + string.Join(", ", _listener.Prefixes));
+        Console.WriteLine("UserServer started. Access me with the following URLs " + string.Join(", ", _listener.Prefixes));
 
         while (true)
         {
@@ -42,21 +41,10 @@ public class Server
 
             var localPath = request.Url?.AbsolutePath[1..].ToLower().Split("/") ?? [];
             var requestMethod = request.HttpMethod.ToLower();
-            var requestTokens = JoinedToken.Deserialize(request.InputStream);
 
             if (localPath == null)
             {
                 response.StatusCode = (int) HttpStatusCode.NotFound;
-            }
-
-            // Create new account:
-            else if (localPath.GetOr(0, "") == "join" && requestMethod == "post"
-                && requestTokens.TokenCount() == 1
-                && UserPass.TryDeserialize(requestTokens.GetEncodedToken(0), out var userPass)
-                && !_storage.UserPasses.HasPassword(userPass.User) // We do not want random people to arbitrarily change anyones password lol
-                && _storage.UserPasses.TryUpdate(userPass.User, userPass.Password))
-            {
-                response.StatusCode = (int) HttpStatusCode.OK;
             }
 
             else
@@ -79,5 +67,4 @@ public class Server
 
 
     private readonly HttpListener _listener;
-    private readonly ServerStorage _storage;
 }

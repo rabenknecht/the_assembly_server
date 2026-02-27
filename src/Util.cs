@@ -11,15 +11,6 @@ public static class Util
     }
 
 
-    public static long? ExtractUserId(this HttpListenerRequest request)
-    {
-        var cookie = request.Cookies.SingleOrDefault(c => c != null && c.Name == "userId");
-        if (cookie == null) return null;
-        if (long.TryParse(cookie.Value, out var userId)) return userId;
-        return null;
-    }
-
-
     public static T[] SubArray<T>(this T[] array, int startInclusive, int length)
     {
         var result = new T[length];

@@ -90,8 +90,6 @@ public static class Shell
 
     private static void Run(Config config)
     {
-        var storage = new ServerStorage(config.DatabankPath);
-        var server = new Server(config.UrlPrefixes, storage);
-        server.RunForever();
+        new Server(config.UrlPrefixes, config.DatabankPath).RunForever();
     }
 }
