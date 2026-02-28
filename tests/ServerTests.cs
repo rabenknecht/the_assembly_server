@@ -12,15 +12,18 @@ public class ServerTests
 
 
     // Always non null as TestInitialize is always executed before any test
-    private readonly HttpClient _client;
-    private readonly Server _server;
+    private static HttpClient _client = null!;
+    private static Server _server = null!;
 
 
-    public ServerTests()
+    [ClassInitialize]
+    public static void ClassInit(TestContext context)
     {
         const string Url = "http://localhost:2023/";
         _server = new Server(Url, "/tmp/the_assembly_testing/servertests/serverDir/");
         _client = new HttpClient() { BaseAddress = new Uri(Url) };
+
+        _server.RunAsync();
     }
 
 
