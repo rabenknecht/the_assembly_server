@@ -11,7 +11,7 @@ public class Server
     public Server(IEnumerable<string> urls, string fileStorage)
     {
         _listener = new HttpListener();
-        foreach (var url in urls) _listener.Prefixes.Add(url);
+        _urls = [.. urls];
     }
 
 
@@ -29,6 +29,7 @@ public class Server
     {
         if (_listener.IsListening) throw new InvalidOperationException("Server is already running!");
 
+        foreach (var url in _urls) _listener.Prefixes.Add(url);
         _listener.Start();
         Console.WriteLine("UserServer started. Access me with the following URLs " + string.Join(", ", _listener.Prefixes));
 
@@ -66,5 +67,15 @@ public class Server
     }
 
 
+    /// <summary>
+    /// Clears all stored data.
+    /// </summary>
+    public void ClearStorage()
+    {
+
+    }
+
+
     private readonly HttpListener _listener;
+    private readonly IReadOnlyCollection<string> _urls;
 }

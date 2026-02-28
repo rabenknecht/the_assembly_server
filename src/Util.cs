@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 
 namespace TheAssembly.Server;
 
@@ -16,5 +17,12 @@ public static class Util
         var result = new T[length];
         Array.Copy(array, startInclusive, result, 0, length);
         return result;
+    }
+
+
+    public static HttpClient AddBasicAuthenticationHeader(this HttpClient client, string clientid, string clientsecret)
+    {
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", $"{clientid}:{clientsecret}");
+        return client;
     }
 }
