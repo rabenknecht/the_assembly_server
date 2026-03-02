@@ -63,11 +63,10 @@ public class Server
                 && CheckLocalRequestUrl(request, "users")
                 && authUser != null)
             {
+                var responseString = string.Join('\n', _passStorage.EnumerateUsers);
+
                 response.StatusCode = (int) HttpStatusCode.OK;
-                response.OutputStream.Write(
-                    _passStorage.EnumerateUsers
-                        .SelectMany(s => Encoding.UTF8.GetBytes($"{s}\n"))
-                        .ToArray());
+                response.OutputStream.Write(Encoding.UTF8.GetBytes(responseString));
             }
 
             else

@@ -71,9 +71,12 @@ public class ServerTests
 
         _client.AddBasicAuthHeader("-test3", "hello");
         var response = await _client.GetAsync("users", TestContext.CancellationToken);
+        var actualUnsplit = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
 
         Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
-        Assert.AreEqual("test1\n_test2\n-test3", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
+        CollectionAssert.AreEquivalent(
+            new string[] { "test1", "_test2", "-test3" },
+            actualUnsplit.Split('\n'));
     }
 
     [TestMethod]
@@ -130,9 +133,12 @@ public class ServerTests
         // The authentication header appears to get lost in transmission?
         _client.AddBasicAuthHeader("-test3", "hello");
         var response = await _client.GetAsync("users", TestContext.CancellationToken);
+        var actualUnsplit = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
 
         Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
-        Assert.AreEqual("test1\n_test2\n-test3", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
+        CollectionAssert.AreEquivalent(
+            new string[] { "test1", "_test2", "-test3" },
+            actualUnsplit.Split('\n'));
     }
 
 

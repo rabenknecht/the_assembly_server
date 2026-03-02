@@ -49,10 +49,12 @@ internal class PassStorage
     }
 
 
-    public IEnumerable<string> EnumerateUsers => Directory.EnumerateFiles(_baseDir);
+    public IEnumerable<string> EnumerateUsers =>
+        Directory.EnumerateFiles(_baseDir)
+            .Select(p => p.Split(Path.DirectorySeparatorChar)[^1]);
 
 
-    public ICollection<string> CollectUsers => Directory.GetFiles(_baseDir);
+    public ICollection<string> CollectUsers => [.. EnumerateUsers];
 
 
     public void Clear()
