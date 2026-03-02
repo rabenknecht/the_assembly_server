@@ -19,7 +19,7 @@ public class ServerTests
     [ClassInitialize]
     public static void ClassInit(TestContext context)
     {
-        const string Url = "http://localhost:2023/";
+        const string Url = "http://localhost:2023/e/";
         _server = new Server(Url, "/tmp/the_assembly_testing/servertests/serverDir/");
         _client = new HttpClient() { BaseAddress = new Uri(Url) };
 
@@ -160,6 +160,6 @@ public class ServerTests
 
     private async Task<HttpResponseMessage> JoinPost(JoinRecord joinRecord)
     {
-        return await _client.PostAsJsonAsync("join", joinRecord, TestContext.CancellationToken);
+        return await _client.PostAsJsonAsync("users", joinRecord, TestContext.CancellationToken);
     }
 }

@@ -1,3 +1,3 @@
 namespace TheAssembly.Server;
 
-public record JoinRecord(string user, string password);
+public record JoinRecord(string User, string Password);
