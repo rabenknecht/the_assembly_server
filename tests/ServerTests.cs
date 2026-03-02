@@ -36,14 +36,14 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task Join_SingleUser_OK()
+    public async Task UsersPOST_SingleUser_OK()
     {
         var response = await JoinPost(new JoinRecord("_1test", "ö12-*#"));
         Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
     }
 
     [TestMethod]
-    public async Task Join_SecondNewUser_OK()
+    public async Task UsersPOST_SecondNewUser_OK()
     {
         await JoinPost(new JoinRecord("_balls123", "shat"));
         var response = await JoinPost(new JoinRecord("ilawte", ""));
@@ -52,13 +52,86 @@ public class ServerTests
     }
 
     [TestMethod]
-    public async Task Join_ExistingUser_NotOK()
+    public async Task UsersPOST_ExistingUser_NotOK()
     {
         // TODO: Check if password is unchanged...
         await JoinPost(new JoinRecord("1", "jidw-w.a-,"));
         var response = await JoinPost(new JoinRecord("1", "newPass"));
 
         Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task UsersPOST_OverrideOldEntry_OldPasswordOK()
+    {
+        await JoinPost(new JoinRecord("test1", ""));
+        await JoinPost(new JoinRecord("_test2", ""));
+        await JoinPost(new JoinRecord("-test3", "hello"));
+        await JoinPost(new JoinRecord("-test3", "shat"));
+
+        _client.AddBasicAuthenticationHeader("-test3", "hello");
+        var response = await _client.GetAsync("users", TestContext.CancellationToken);
+
+        Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        Assert.AreEqual("test1\n_test2\n-test3", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
+    }
+
+    [TestMethod]
+    public async Task UsersPOST_OverrideOldEntry_NewPasswordNotOK()
+    {
+        await JoinPost(new JoinRecord("test1", ""));
+        await JoinPost(new JoinRecord("_test2", ""));
+        await JoinPost(new JoinRecord("-test3", "hello"));
+        await JoinPost(new JoinRecord("-test3", "shat"));
+
+        _client.AddBasicAuthenticationHeader("-test3", "shat");
+        var response = await _client.GetAsync("users", TestContext.CancellationToken);
+
+        Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        Assert.AreEqual("", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
+    }
+
+
+    [TestMethod]
+    public async Task UsersGET_Unauthenticated_NotOK()
+    {
+        await JoinPost(new JoinRecord("test1", ""));
+        await JoinPost(new JoinRecord("_test2", ""));
+        await JoinPost(new JoinRecord("-test3", "hello"));
+
+        var response = await _client.GetAsync("users", TestContext.CancellationToken);
+
+        Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        Assert.AreEqual("", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
+    }
+
+
+    [TestMethod]
+    public async Task UsersGET_IncorrectlyAuthenticated_NotOK()
+    {
+        await JoinPost(new JoinRecord("test1", ""));
+        await JoinPost(new JoinRecord("_test2", ""));
+        await JoinPost(new JoinRecord("-test3", "hello"));
+
+        _client.AddBasicAuthenticationHeader("-test3", "hellp");
+        var response = await _client.GetAsync("users", TestContext.CancellationToken);
+
+        Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        Assert.AreEqual("", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
+    }
+
+    [TestMethod]
+    public async Task UsersGET_Authenticated_ReturnsUsers()
+    {
+        await JoinPost(new JoinRecord("test1", ""));
+        await JoinPost(new JoinRecord("_test2", ""));
+        await JoinPost(new JoinRecord("-test3", "hello"));
+
+        _client.AddBasicAuthenticationHeader("-test3", "hello");
+        var response = await _client.GetAsync("users", TestContext.CancellationToken);
+
+        Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        Assert.AreEqual("test1\n_test2\n-test3", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
     }
 
 
@@ -82,79 +155,6 @@ public class ServerTests
         var response = await _client.GetAsync("doIExist", TestContext.CancellationToken);
 
         Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
-    }
-
-
-    [TestMethod]
-    public async Task Users_Unauthenticated_NotOK()
-    {
-        await JoinPost(new JoinRecord("test1", ""));
-        await JoinPost(new JoinRecord("_test2", ""));
-        await JoinPost(new JoinRecord("-test3", "hello"));
-
-        var response = await _client.GetAsync("users", TestContext.CancellationToken);
-
-        Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
-        Assert.AreEqual("", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
-    }
-
-
-    [TestMethod]
-    public async Task Users_IncorrectlyAuthenticated_NotOK()
-    {
-        await JoinPost(new JoinRecord("test1", ""));
-        await JoinPost(new JoinRecord("_test2", ""));
-        await JoinPost(new JoinRecord("-test3", "hello"));
-
-        _client.AddBasicAuthenticationHeader("-test3", "hellp");
-        var response = await _client.GetAsync("users", TestContext.CancellationToken);
-
-        Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
-        Assert.AreEqual("", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
-    }
-
-    [TestMethod]
-    public async Task Users_Authenticated_ReturnsUsers()
-    {
-        await JoinPost(new JoinRecord("test1", ""));
-        await JoinPost(new JoinRecord("_test2", ""));
-        await JoinPost(new JoinRecord("-test3", "hello"));
-
-        _client.AddBasicAuthenticationHeader("-test3", "hello");
-        var response = await _client.GetAsync("users", TestContext.CancellationToken);
-
-        Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
-        Assert.AreEqual("test1\n_test2\n-test3", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
-    }
-
-    [TestMethod]
-    public async Task Join_OverrideOldEntry_OldPasswordOK()
-    {
-        await JoinPost(new JoinRecord("test1", ""));
-        await JoinPost(new JoinRecord("_test2", ""));
-        await JoinPost(new JoinRecord("-test3", "hello"));
-        await JoinPost(new JoinRecord("-test3", "shat"));
-
-        _client.AddBasicAuthenticationHeader("-test3", "hello");
-        var response = await _client.GetAsync("users", TestContext.CancellationToken);
-
-        Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
-        Assert.AreEqual("test1\n_test2\n-test3", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
-    }
-
-    [TestMethod]
-    public async Task Join_OverrideOldEntry_NewPasswordNotOK()
-    {
-        await JoinPost(new JoinRecord("test1", ""));
-        await JoinPost(new JoinRecord("_test2", ""));
-        await JoinPost(new JoinRecord("-test3", "hello"));
-        await JoinPost(new JoinRecord("-test3", "shat"));
-
-        _client.AddBasicAuthenticationHeader("-test3", "shat");
-        var response = await _client.GetAsync("users", TestContext.CancellationToken);
-
-        Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
-        Assert.AreEqual("", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
     }
 
 
