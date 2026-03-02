@@ -69,7 +69,7 @@ public class ServerTests
         await JoinPost(new JoinRecord("-test3", "hello"));
         await JoinPost(new JoinRecord("-test3", "shat"));
 
-        _client.AddBasicAuthenticationHeader("-test3", "hello");
+        _client.AddBasicAuthHeader("-test3", "hello");
         var response = await _client.GetAsync("users", TestContext.CancellationToken);
 
         Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
@@ -84,7 +84,7 @@ public class ServerTests
         await JoinPost(new JoinRecord("-test3", "hello"));
         await JoinPost(new JoinRecord("-test3", "shat"));
 
-        _client.AddBasicAuthenticationHeader("-test3", "shat");
+        _client.AddBasicAuthHeader("-test3", "shat");
         var response = await _client.GetAsync("users", TestContext.CancellationToken);
 
         Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
@@ -113,7 +113,7 @@ public class ServerTests
         await JoinPost(new JoinRecord("_test2", ""));
         await JoinPost(new JoinRecord("-test3", "hello"));
 
-        _client.AddBasicAuthenticationHeader("-test3", "hellp");
+        _client.AddBasicAuthHeader("-test3", "hellp");
         var response = await _client.GetAsync("users", TestContext.CancellationToken);
 
         Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
@@ -127,7 +127,8 @@ public class ServerTests
         await JoinPost(new JoinRecord("_test2", ""));
         await JoinPost(new JoinRecord("-test3", "hello"));
 
-        _client.AddBasicAuthenticationHeader("-test3", "hello");
+        // The authentication header appears to get lost in transmission?
+        _client.AddBasicAuthHeader("-test3", "hello");
         var response = await _client.GetAsync("users", TestContext.CancellationToken);
 
         Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
@@ -140,7 +141,7 @@ public class ServerTests
     {
         await JoinPost(new JoinRecord("sas", "fast"));
 
-        _client.AddBasicAuthenticationHeader("sass", "");
+        _client.AddBasicAuthHeader("sass", "");
         var response = await _client.GetAsync("doIExist", TestContext.CancellationToken);
 
         Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
@@ -151,7 +152,7 @@ public class ServerTests
     {
         await JoinPost(new JoinRecord("sas", "fast"));
 
-        _client.AddBasicAuthenticationHeader("sas", "awfiwajfoj");
+        _client.AddBasicAuthHeader("sas", "awfiwajfoj");
         var response = await _client.GetAsync("doIExist", TestContext.CancellationToken);
 
         Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);

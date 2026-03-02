@@ -38,11 +38,14 @@ internal class PassStorage
     }
 
 
-    public bool CorrectPass(string? user, string? pass)
+    /// <returns>False if the password is incorrect, or no entry exists</returns>
+    public bool CorrectOrNoPass(string? user, string? pass)
     {
         if (!IsUserLegal(user)) return false;
+        var passFile = PassFileFor(user!);
+        if (!File.Exists(passFile)) return false;
         // TODO: DO NOT SAVE PASSES IN PLAINTEXT!!!!!!
-        return File.ReadAllText(PassFileFor(user!)) == pass;
+        return File.ReadAllText(passFile) == pass;
     }
 
 

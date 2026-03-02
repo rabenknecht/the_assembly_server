@@ -39,7 +39,7 @@ public static class Util
 
 
     // TODO: Move into core, or even just to the client
-    public static HttpClient AddBasicAuthenticationHeader(this HttpClient client, string clientid, string clientsecret)
+    public static HttpClient AddBasicAuthHeader(this HttpClient client, string clientid, string clientsecret)
     {
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", $"{clientid}:{clientsecret}");
         return client;
@@ -50,7 +50,8 @@ public static class Util
     {
         user = null!;
         pass = null!;
-        var split = basicAuthHeader.Split(':');
+        if (basicAuthHeader[..6] != "Basic ") return false;
+        var split = basicAuthHeader[6..].Split(':');
         if (split.Length != 2) return false;
         user = split[0];
         pass = split[1];

@@ -1,7 +1,5 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
-using System.Text.Json;
 
 namespace TheAssembly.Server;
 
@@ -14,7 +12,10 @@ public class Server
     public Server(IEnumerable<string> urls, string fileStorage)
     {
         _listener = new HttpListener();
-        // _listener.AuthenticationSchemes = AuthenticationSchemes.Basic;
+        // I have no fucking idea how HttpListeners actually authenticate Basic.
+        // It always ends up forbidding every connection, so we just authenticate
+        // the user ourselves
+        _listener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
         _urls = [.. urls];
 
         if (!Directory.Exists(fileStorage)) Directory.CreateDirectory(fileStorage);
@@ -46,7 +47,7 @@ public class Server
             var context = _listener.GetContext();
             var request = context.Request;
             var response = context.Response;
-            var authUser = IsAuthenticatedAs(request);
+            var authUser = GetAuthenticatedUser(request);
             var requestContent = ExtractRequestContent(request);
 
             if (request.HttpMethod == "POST"
@@ -100,12 +101,12 @@ public class Server
     /// <summary>
     /// Returns the authenticated user of the request.
     /// </summary>
-    private string? IsAuthenticatedAs(HttpListenerRequest request)
+    private string? GetAuthenticatedUser(HttpListenerRequest request)
     {
         var authHeader = request.Headers[nameof(HttpRequestHeader.Authorization)];
         if (authHeader == null) return null;
         if (!authHeader.TryBasicAuthHeaderToUserPass(out var user, out var pass)) return null;
-        if (!_passStorage.CorrectPass(user, pass)) return null;
+        if (!_passStorage.CorrectOrNoPass(user, pass)) return null;
         return user;
     }
 
