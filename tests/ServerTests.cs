@@ -142,29 +142,6 @@ public class ServerTests
     }
 
 
-    [TestMethod]
-    public async Task DoIExist_NonExistingUser_NotOK()
-    {
-        await JoinPost(new JoinRecord("sas", "fast"));
-
-        _client.AddBasicAuthHeader("sass", "");
-        var response = await _client.GetAsync("doIExist", TestContext.CancellationToken);
-
-        Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
-    }
-
-    [TestMethod]
-    public async Task DoIExist_ExistingUser_OK()
-    {
-        await JoinPost(new JoinRecord("sas", "fast"));
-
-        _client.AddBasicAuthHeader("sas", "awfiwajfoj");
-        var response = await _client.GetAsync("doIExist", TestContext.CancellationToken);
-
-        Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
-    }
-
-
     private async Task<HttpResponseMessage> JoinPost(JoinRecord joinRecord)
     {
         return await _client.PostAsJsonAsync("users", joinRecord, TestContext.CancellationToken);

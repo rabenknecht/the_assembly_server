@@ -20,6 +20,13 @@ internal class PassStorage
     }
 
 
+    public bool Exists(string? user)
+    {
+        if (!IsUserLegal(user)) return false;
+        return File.Exists(PassFileFor(user!));
+    }
+
+
     /// <summary>
     /// Updates the pass for the passed user. Creates a new entry if the user
     /// had no password before.

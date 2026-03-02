@@ -50,6 +50,7 @@ public class Server
             var authUser = GetAuthenticatedUser(request);
             var requestContent = ExtractRequestContent(request);
 
+            // users.POST
             if (request.HttpMethod == "POST"
                 && CheckLocalRequestUrl(request, "users")
                 && requestContent.TryJsonDeserialize<JoinRecord>(out var joinRecord)
@@ -59,6 +60,7 @@ public class Server
                 response.StatusCode = (int) HttpStatusCode.OK;
             }
 
+            // users.GET
             else if (request.HttpMethod == "GET"
                 && CheckLocalRequestUrl(request, "users")
                 && authUser != null)
