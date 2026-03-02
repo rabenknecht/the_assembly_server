@@ -1,4 +1,3 @@
-using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
@@ -25,6 +24,16 @@ public static class Util
         where T : class
     {
         result = JsonSerializer.Deserialize<T>(stream)!;
+        return result != null;
+    }
+
+
+    public static bool TryJsonDeserialize<T>(this string? toDeserialize, out T result)
+        where T : class
+    {
+        result = null!;
+        if (toDeserialize == null) return false;
+        result = JsonSerializer.Deserialize<T>(toDeserialize)!;
         return result != null;
     }
 

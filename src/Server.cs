@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 
 namespace TheAssembly.Server;
 
@@ -13,7 +14,7 @@ public class Server
     public Server(IEnumerable<string> urls, string fileStorage)
     {
         _listener = new HttpListener();
-        _listener.AuthenticationSchemes = AuthenticationSchemes.Basic;
+        // _listener.AuthenticationSchemes = AuthenticationSchemes.Basic;
         _urls = [.. urls];
 
         if (!Directory.Exists(fileStorage)) Directory.CreateDirectory(fileStorage);
@@ -46,32 +47,24 @@ public class Server
             var request = context.Request;
             var response = context.Response;
             var authUser = IsAuthenticatedAs(request);
+            var requestContent = ExtractRequestContent(request);
 
-            var localPath = request.Url?.AbsolutePath[1..].ToLower().Split("/") ?? [];
-            var requestMethod = request.HttpMethod.ToLower();
-
-            if (localPath == null)
+            if (request.HttpMethod == "POST"
+                && CheckLocalRequestUrl(request, "users")
+                && requestContent.TryJsonDeserialize<JoinRecord>(out var joinRecord)
+                && _passStorage.CanBeNew(joinRecord.user))
             {
-                response.StatusCode = (int) HttpStatusCode.NotFound;
-            }
-
-            else if (requestMethod == "post"
-                && localPath.Length == 1 && localPath[0] == "users"
-                && request.InputStream.TryJsonDeserialize(out JoinRecord joinRecord)
-                && IsUsernameLegal(joinRecord.User)
-                && !_passStorage.HasPass(joinRecord.User))
-            {
-                _passStorage.Update(joinRecord.User, joinRecord.Password);
+                _passStorage.Update(joinRecord.user, joinRecord.password);
                 response.StatusCode = (int) HttpStatusCode.OK;
             }
 
-            else if (requestMethod == "get"
-                && localPath.Length == 1 && localPath[0] == "users"
+            else if (request.HttpMethod == "GET"
+                && CheckLocalRequestUrl(request, "users")
                 && authUser != null)
             {
                 response.StatusCode = (int) HttpStatusCode.OK;
                 response.OutputStream.Write(
-                    _passStorage.Users
+                    _passStorage.EnumerateUsers
                         .SelectMany(s => Encoding.UTF8.GetBytes($"{s}\n"))
                         .ToArray());
             }
@@ -117,10 +110,22 @@ public class Server
     }
 
 
-    private bool IsUsernameLegal(string userName)
+    private string? ExtractRequestContent(HttpListenerRequest request)
     {
-        const string legalChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
-        return userName.All(legalChars.Contains);
+        if (!request.HasEntityBody) return null;
+        using var stream = request.InputStream;
+        using var reader = new StreamReader(stream, request.ContentEncoding);
+        return reader.ReadToEnd();
+    }
+
+
+    private bool CheckLocalRequestUrl(HttpListenerRequest request, string localUrl)
+    {
+        return _urls.Any(u =>
+        {
+            var expected = $"{u}{localUrl}";
+            return expected == request.Url?.AbsoluteUri;
+        });
     }
 
 

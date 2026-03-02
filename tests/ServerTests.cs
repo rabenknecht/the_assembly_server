@@ -19,7 +19,7 @@ public class ServerTests
     [ClassInitialize]
     public static void ClassInit(TestContext context)
     {
-        const string Url = "http://localhost:2023/e/";
+        const string Url = "http://localhost:2023/3/";
         _server = new Server(Url, "/tmp/the_assembly_testing/servertests/serverDir/");
         _client = new HttpClient() { BaseAddress = new Uri(Url) };
 
@@ -63,7 +63,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task DoIExist_NonExistingUser_NotFound()
+    public async Task DoIExist_NonExistingUser_NotOK()
     {
         await JoinPost(new JoinRecord("sas", "fast"));
 
