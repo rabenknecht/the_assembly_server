@@ -48,15 +48,15 @@ public class ServerTests
     [TestMethod]
     public async Task UsersPOST_SingleUser_OK()
     {
-        var response = await JoinPost(new JoinRecord("_1test", "ö12-*#"));
+        var response = await UserPost(new JoinRecord("_1test", "ö12-*#"));
         Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
     }
 
     [TestMethod]
     public async Task UsersPOST_SecondNewUser_OK()
     {
-        await JoinPost(new JoinRecord("_balls123", "shat"));
-        var response = await JoinPost(new JoinRecord("ilawte", ""));
+        await UserPost(new JoinRecord("_balls123", "shat"));
+        var response = await UserPost(new JoinRecord("ilawte", ""));
 
         Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
     }
@@ -65,8 +65,8 @@ public class ServerTests
     public async Task UsersPOST_ExistingUser_NotOK()
     {
         // TODO: Check if password is unchanged...
-        await JoinPost(new JoinRecord("1", "jidw-w.a-,"));
-        var response = await JoinPost(new JoinRecord("1", "newPass"));
+        await UserPost(new JoinRecord("1", "jidw-w.a-,"));
+        var response = await UserPost(new JoinRecord("1", "newPass"));
 
         Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
     }
@@ -74,10 +74,10 @@ public class ServerTests
     [TestMethod]
     public async Task UsersPOST_OverrideOldEntry_OldPasswordOK()
     {
-        await JoinPost(new JoinRecord("test1", ""));
-        await JoinPost(new JoinRecord("_test2", ""));
-        await JoinPost(new JoinRecord("-test3", "hello"));
-        await JoinPost(new JoinRecord("-test3", "shat"));
+        await UserPost(new JoinRecord("test1", ""));
+        await UserPost(new JoinRecord("_test2", ""));
+        await UserPost(new JoinRecord("-test3", "hello"));
+        await UserPost(new JoinRecord("-test3", "shat"));
 
         _client.AddBasicAuthHeader("-test3", "hello");
         var response = await _client.GetAsync("users", TestContext.CancellationToken);
@@ -92,10 +92,10 @@ public class ServerTests
     [TestMethod]
     public async Task UsersPOST_OverrideOldEntry_NewPasswordNotOK()
     {
-        await JoinPost(new JoinRecord("test1", ""));
-        await JoinPost(new JoinRecord("_test2", ""));
-        await JoinPost(new JoinRecord("-test3", "hello"));
-        await JoinPost(new JoinRecord("-test3", "shat"));
+        await UserPost(new JoinRecord("test1", ""));
+        await UserPost(new JoinRecord("_test2", ""));
+        await UserPost(new JoinRecord("-test3", "hello"));
+        await UserPost(new JoinRecord("-test3", "shat"));
 
         _client.AddBasicAuthHeader("-test3", "shat");
         var response = await _client.GetAsync("users", TestContext.CancellationToken);
@@ -108,9 +108,9 @@ public class ServerTests
     [TestMethod]
     public async Task UsersGET_Unauthenticated_NotOK()
     {
-        await JoinPost(new JoinRecord("test1", ""));
-        await JoinPost(new JoinRecord("_test2", ""));
-        await JoinPost(new JoinRecord("-test3", "hello"));
+        await UserPost(new JoinRecord("test1", ""));
+        await UserPost(new JoinRecord("_test2", ""));
+        await UserPost(new JoinRecord("-test3", "hello"));
 
         var response = await _client.GetAsync("users", TestContext.CancellationToken);
 
@@ -122,9 +122,9 @@ public class ServerTests
     [TestMethod]
     public async Task UsersGET_IncorrectlyAuthenticated_NotOK()
     {
-        await JoinPost(new JoinRecord("test1", ""));
-        await JoinPost(new JoinRecord("_test2", ""));
-        await JoinPost(new JoinRecord("-test3", "hello"));
+        await UserPost(new JoinRecord("test1", ""));
+        await UserPost(new JoinRecord("_test2", ""));
+        await UserPost(new JoinRecord("-test3", "hello"));
 
         _client.AddBasicAuthHeader("-test3", "hellp");
         var response = await _client.GetAsync("users", TestContext.CancellationToken);
@@ -137,9 +137,9 @@ public class ServerTests
     [TestMethod]
     public async Task UsersGET_Authenticated_ReturnsUsers()
     {
-        await JoinPost(new JoinRecord("test1", ""));
-        await JoinPost(new JoinRecord("_test2", ""));
-        await JoinPost(new JoinRecord("-test3", "hello"));
+        await UserPost(new JoinRecord("test1", ""));
+        await UserPost(new JoinRecord("_test2", ""));
+        await UserPost(new JoinRecord("-test3", "hello"));
 
         // The authentication header appears to get lost in transmission?
         _client.AddBasicAuthHeader("-test3", "hello");
@@ -157,7 +157,7 @@ public class ServerTests
     public async Task EntryCurrent_NoEntryGenerated_NotOK()
     {
         // Create user and authenticate client
-        await JoinPost(new JoinRecord("user", ""));
+        await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
         var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
@@ -170,7 +170,7 @@ public class ServerTests
     public async Task EntryCurrent_QuestionWithConstantVoteOptions_ReturnsUnvotedQuestion()
     {
         // Create user and authenticate client
-        await JoinPost(new JoinRecord("user", ""));
+        await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
         var question = "Do you still love me?\n"
@@ -200,11 +200,11 @@ public class ServerTests
     public async Task EntryCurrent_QuestionWithUserVoteOptions_ReturnsUnvotedQuestion()
     {
         // Create user and authenticate client
-        await JoinPost(new JoinRecord("user1", ""));
+        await UserPost(new JoinRecord("user1", ""));
         _client.AddBasicAuthHeader("user1", "");
 
-        await JoinPost(new JoinRecord("user2", ""));
-        await JoinPost(new JoinRecord("user3", ""));
+        await UserPost(new JoinRecord("user2", ""));
+        await UserPost(new JoinRecord("user3", ""));
 
         var question = "Userquestion?\n"
             + ":u\n"
@@ -232,7 +232,7 @@ public class ServerTests
     public async Task Entry_ForcedSinglePastEntry_ReturnsUnvotedQuestion()
     {
         // Create user and authenticate client
-        await JoinPost(new JoinRecord("user", ""));
+        await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
         var question1 = "Who sucks more?\n"
@@ -269,7 +269,7 @@ public class ServerTests
     public async Task Entry_MultiplePastEntries_ReturnsAllQuestions()
     {
         // Create user and authenticate client
-        await JoinPost(new JoinRecord("user", ""));
+        await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
         var questions = "Q1\n"
@@ -368,7 +368,7 @@ public class ServerTests
     }
 
 
-    private async Task<HttpResponseMessage> JoinPost(JoinRecord joinRecord)
+    private async Task<HttpResponseMessage> UserPost(JoinRecord joinRecord)
     {
         return await _client.PostAsJsonAsync("users", joinRecord, TestContext.CancellationToken);
     }

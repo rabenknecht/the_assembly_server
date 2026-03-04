@@ -99,12 +99,16 @@ public class Server
     }
 
 
-    public void LoadQuestions(string questionsText)
+    /// <returns>If the questions have successfully been loaded.
+    /// Loading usually fails due to an incorrect format</returns>
+    public bool LoadQuestions(string questionsText)
     {
         throw new NotImplementedException();
     }
 
 
+    /// <returns>False if loading a new question failed.
+    /// Usually happens when we server ran out of unique question.</returns>
     public bool NewRandomEntry()
     {
         throw new NotImplementedException();
