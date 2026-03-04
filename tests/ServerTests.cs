@@ -18,6 +18,7 @@ public class ServerTests
 
     private const string TEST_DIR = "/tmp/the_assembly_testing/servertests";
     private const string SERVER_DIR = $"{TEST_DIR}/serverDir";
+    private const string QUESTION_FILE = $"{TEST_DIR}/questionFile";
     private const string Url = "http://localhost:2023/3/";
 
 
@@ -30,7 +31,7 @@ public class ServerTests
         Directory.CreateDirectory(TEST_DIR);
         Directory.CreateDirectory(SERVER_DIR);
 
-        _server = new Server(Url, SERVER_DIR);
+        _server = new Server(Url, SERVER_DIR, QUESTION_FILE);
         _client = new HttpClient() { BaseAddress = new Uri(Url) };
 
         _server.RunAsync();
@@ -40,7 +41,9 @@ public class ServerTests
     [TestInitialize]
     public void TestInit()
     {
+        File.WriteAllText(QUESTION_FILE, string.Empty);
         _server.ClearStorage();
+        _server.ReloadQuestions();
         _client.DefaultRequestHeaders.Authorization = null;
     }
 
@@ -156,7 +159,7 @@ public class ServerTests
     [TestMethod]
     public async Task NewRandomQuestion_WhenQuestionsAreAvailable_ReturnsTrue()
     {
-        var questions = "Q1\n"
+        File.WriteAllText(QUESTION_FILE, "Q1\n"
             + "Q1V1\n"
             + "Q1V2\n"
             + "\n"
@@ -170,8 +173,8 @@ public class ServerTests
             + "\n"
             + "Q4\n"
             + "Q4V1\n"
-            + "Q4V2";
-        _server.LoadQuestions(questions);
+            + "Q4V2");
+        _server.ReloadQuestions();
         Assert.IsTrue(_server.NewRandomEntry());
         Assert.IsTrue(_server.NewRandomEntry());
         Assert.IsTrue(_server.NewRandomEntry());
@@ -182,7 +185,7 @@ public class ServerTests
     [TestMethod]
     public async Task NewRandomQuestion_NoQuestionsLeft_ReturnsFalse()
     {
-        var questions = "Q1\n"
+        File.WriteAllText(QUESTION_FILE, "Q1\n"
             + "Q1V1\n"
             + "Q1V2\n"
             + "\n"
@@ -196,8 +199,8 @@ public class ServerTests
             + "\n"
             + "Q4\n"
             + "Q4V1\n"
-            + "Q4V2";
-        _server.LoadQuestions(questions);
+            + "Q4V2");
+        _server.ReloadQuestions();
         _server.NewRandomEntry();
         _server.NewRandomEntry();
         _server.NewRandomEntry();
@@ -226,11 +229,11 @@ public class ServerTests
         await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
-        var question = "Do you still love me?\n"
+        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
             + "No\n"
             + "Yes\n"
-            + "Sometimes";
-        _server.LoadQuestions(question);
+            + "Sometimes");
+        _server.ReloadQuestions();
         _server.NewRandomEntry();
 
         var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
@@ -259,10 +262,10 @@ public class ServerTests
         await UserPost(new JoinRecord("user2", ""));
         await UserPost(new JoinRecord("user3", ""));
 
-        var question = "Userquestion?\n"
+        File.WriteAllText(QUESTION_FILE, "Userquestion?\n"
             + ":u\n"
-            + "Nobody\n";
-        _server.LoadQuestions(question);
+            + "Nobody\n");
+        _server.ReloadQuestions();
         _server.NewRandomEntry();
 
         var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
@@ -288,19 +291,19 @@ public class ServerTests
         await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
-        var question1 = "Who sucks more?\n"
+        File.WriteAllText(QUESTION_FILE, "Who sucks more?\n"
             + "Price\n"
             + "Picard\n"
             + "Susane\n"
-            + "Your mother";
-        _server.LoadQuestions(question1);
+            + "Your mother");
+        _server.ReloadQuestions();
         _server.NewRandomEntry();
 
         // Replace current question, move first question into general entry storage
-        var question2 = "Test\n"
+        File.WriteAllText(QUESTION_FILE, "Test\n"
             + "test1\n"
-            + "test2\n";
-        _server.LoadQuestions(question2);
+            + "test2\n");
+        _server.ReloadQuestions();
 
         var response = await _client.GetAsync("entry", TestContext.CancellationToken);
         var responseText = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
@@ -325,7 +328,7 @@ public class ServerTests
         await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
-        var questions = "Q1\n"
+        File.WriteAllText(QUESTION_FILE, "Q1\n"
             + "Q1V1\n"
             + "Q1V2\n"
             + "\n"
@@ -339,8 +342,8 @@ public class ServerTests
             + "\n"
             + "Q4\n"
             + "Q4V1\n"
-            + "Q4V2";
-        _server.LoadQuestions(questions);
+            + "Q4V2");
+        _server.ReloadQuestions();
         _server.NewRandomEntry();
         _server.NewRandomEntry();
         _server.NewRandomEntry();

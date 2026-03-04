@@ -6,10 +6,10 @@ namespace TheAssembly.Server;
 
 public class Server
 {
-    public Server(string url, string fileStorage) : this([url], fileStorage) {}
+    public Server(string url, string fileStorage, params string[] questionFiles) : this([url], fileStorage, questionFiles) {}
 
 
-    public Server(IEnumerable<string> urls, string fileStorage)
+    public Server(IEnumerable<string> urls, string fileStorage, IEnumerable<string> questionFiles)
     {
         _listener = new HttpListener();
         // I have no fucking idea how HttpListeners actually authenticate Basic.
@@ -99,9 +99,7 @@ public class Server
     }
 
 
-    /// <returns>If the questions have successfully been loaded.
-    /// Loading usually fails due to an incorrect format</returns>
-    public bool LoadQuestions(string questionsText)
+    public void ReloadQuestions()
     {
         throw new NotImplementedException();
     }
