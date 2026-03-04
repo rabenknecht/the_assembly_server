@@ -154,6 +154,59 @@ public class ServerTests
 
 
     [TestMethod]
+    public async Task NewRandomQuestion_WhenQuestionsAreAvailable_ReturnsTrue()
+    {
+        var questions = "Q1\n"
+            + "Q1V1\n"
+            + "Q1V2\n"
+            + "\n"
+            + "Q2\n"
+            + "Q2V1\n"
+            + "Q2V2\n"
+            + "\n"
+            + "Q3\n"
+            + "Q3V1\n"
+            + "Q3V2\n"
+            + "\n"
+            + "Q4\n"
+            + "Q4V1\n"
+            + "Q4V2";
+        _server.LoadQuestions(questions);
+        Assert.IsTrue(_server.NewRandomEntry());
+        Assert.IsTrue(_server.NewRandomEntry());
+        Assert.IsTrue(_server.NewRandomEntry());
+        Assert.IsTrue(_server.NewRandomEntry());
+    }
+
+
+    [TestMethod]
+    public async Task NewRandomQuestion_NoQuestionsLeft_ReturnsFalse()
+    {
+        var questions = "Q1\n"
+            + "Q1V1\n"
+            + "Q1V2\n"
+            + "\n"
+            + "Q2\n"
+            + "Q2V1\n"
+            + "Q2V2\n"
+            + "\n"
+            + "Q3\n"
+            + "Q3V1\n"
+            + "Q3V2\n"
+            + "\n"
+            + "Q4\n"
+            + "Q4V1\n"
+            + "Q4V2";
+        _server.LoadQuestions(questions);
+        _server.NewRandomEntry();
+        _server.NewRandomEntry();
+        _server.NewRandomEntry();
+        _server.NewRandomEntry();
+        Assert.IsFalse(_server.NewRandomEntry());
+    }
+
+
+    [TestMethod]
     public async Task EntryCurrent_NoEntryGenerated_NotOK()
     {
         // Create user and authenticate client
@@ -312,59 +365,6 @@ public class ServerTests
             new string[] { "Q1V1", "Q1V2", "Q2V1", "Q2V2", "Q3V1", "Q3V2", "Q4V1", "Q4V2" },
             "entry returns incorrect voteOptions"
         );
-    }
-
-
-    [TestMethod]
-    public async Task NewRandomQuestion_WhenQuestionsAreAvailable_ReturnsTrue()
-    {
-        var questions = "Q1\n"
-            + "Q1V1\n"
-            + "Q1V2\n"
-            + "\n"
-            + "Q2\n"
-            + "Q2V1\n"
-            + "Q2V2\n"
-            + "\n"
-            + "Q3\n"
-            + "Q3V1\n"
-            + "Q3V2\n"
-            + "\n"
-            + "Q4\n"
-            + "Q4V1\n"
-            + "Q4V2";
-        _server.LoadQuestions(questions);
-        Assert.IsTrue(_server.NewRandomEntry());
-        Assert.IsTrue(_server.NewRandomEntry());
-        Assert.IsTrue(_server.NewRandomEntry());
-        Assert.IsTrue(_server.NewRandomEntry());
-    }
-
-
-    [TestMethod]
-    public async Task NewRandomQuestion_NoQuestionsLeft_ReturnsFalse()
-    {
-        var questions = "Q1\n"
-            + "Q1V1\n"
-            + "Q1V2\n"
-            + "\n"
-            + "Q2\n"
-            + "Q2V1\n"
-            + "Q2V2\n"
-            + "\n"
-            + "Q3\n"
-            + "Q3V1\n"
-            + "Q3V2\n"
-            + "\n"
-            + "Q4\n"
-            + "Q4V1\n"
-            + "Q4V2";
-        _server.LoadQuestions(questions);
-        _server.NewRandomEntry();
-        _server.NewRandomEntry();
-        _server.NewRandomEntry();
-        _server.NewRandomEntry();
-        Assert.IsFalse(_server.NewRandomEntry());
     }
 
 
