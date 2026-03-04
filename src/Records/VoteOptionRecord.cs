@@ -1,0 +1,1 @@
+public record class VoteOptionRecord(string? voteOption, string[]? votedBy);

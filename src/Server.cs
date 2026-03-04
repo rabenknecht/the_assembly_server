@@ -99,6 +99,18 @@ public class Server
     }
 
 
+    public void LoadQuestions(string questionsText)
+    {
+        throw new NotImplementedException();
+    }
+
+
+    public bool NewRandomEntry()
+    {
+        throw new NotImplementedException();
+    }
+
+
     /// <summary>
     /// Returns the authenticated user of the request.
     /// </summary>
