@@ -89,17 +89,30 @@ internal class QuestionStorage
             int b;
             while ((b = readStream.ReadByte()) != '\n') ;
 
-            var startInclusive = readStream.Position;
-            var prevByte = readStream.ReadByte();
+            long startInclusive = readStream.Position;
+            long endExclusive;
+
+            int prevByte = readStream.ReadByte();
             if (prevByte == -1) return;
             int curByte = readStream.ReadByte();
-            while (prevByte != '\n' || curByte != '\n')
+
+            while (true)
             {
-                if (curByte == -1) return;
+                if (curByte == -1)
+                {
+                    endExclusive = readStream.Position;
+                    break;
+                }
+
+                if (curByte == '\n' && prevByte == '\n')
+                {
+                    endExclusive = readStream.Position - 1;
+                    break;
+                }
+
                 prevByte = curByte;
                 curByte = readStream.ReadByte();
             }
-            var endExclusive = readStream.Position - 2;
 
             // We just ignore questions that are too long for the buffer. Who the fuck creates a 1024 symbol long question!?
             if ((endExclusive - startInclusive) <= _buffer.Length) _questions.Add((startInclusive, endExclusive));
