@@ -13,23 +13,61 @@ internal class QuestionStorage
     }
 
 
-    public int QuestionCount => _singleFiles.Sum(f => f.QuestionCount);
+    public int FileCount => _singleFiles.Length;
 
 
-    public string this[int index]
+    public int QuestionCount(int fileIndex)
     {
-        get
+        if (fileIndex < 0 || fileIndex >= FileCount) throw new IndexOutOfRangeException();
+        return _singleFiles[fileIndex].QuestionCount;
+    }
+
+
+    public int QuestionCountOr(int fileIndex, int or)
+    {
+        if (fileIndex < 0 || fileIndex >= FileCount) return or;
+        return _singleFiles[fileIndex].QuestionCount;
+    }
+
+
+    public int TotalQuestionCount => _singleFiles.Sum(f => f.QuestionCount);
+
+
+    public string GetQuestion(int fileIndex, int questionIndex)
+    {
+        if (fileIndex < 0 || fileIndex >= FileCount
+            || questionIndex < 0 || questionIndex >= QuestionCount(fileIndex))
+            throw new IndexOutOfRangeException();
+
+        return _singleFiles[fileIndex][questionIndex];
+    }
+
+
+    /// <returns>If the resulting file and questionIndex are in bounds of the QuestionStorage</returns>
+    public bool TotalToFileQuestionIndex(int totalIndex, out int fileIndex, out int questionIndex)
+    {
+        if (totalIndex < 0)
         {
-            if (index < 0 || index >= QuestionCount) throw new IndexOutOfRangeException();
-
-            foreach (var f in _singleFiles)
-            {
-                if (f.QuestionCount > index) return f[index];
-                else index -= f.QuestionCount;
-            }
-
-            throw new Exception("SHOULD NEVER HAPPEN");
+            fileIndex = -1;
+            questionIndex = (int) totalIndex;
+            return false;
         }
+
+        foreach (var (i, f) in _singleFiles.Index())
+        {
+            if (totalIndex >= f.QuestionCount)
+                totalIndex -= f.QuestionCount;
+            else
+            {
+                fileIndex = i;
+                questionIndex = totalIndex;
+                return true;
+            }
+        }
+
+        fileIndex = FileCount;
+        questionIndex = totalIndex;
+        return false;
     }
 
 

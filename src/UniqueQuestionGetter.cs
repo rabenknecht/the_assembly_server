@@ -8,30 +8,93 @@ internal class UniqueQuestionGetter
     {
         _storage = storage;
         _filePath = filePath;
-        _alreadyUsed = new List<int>(File.ReadAllBytes(filePath).BytesToInts());
+
+        var alreadyUsedFileBytes = File.ReadAllBytes(filePath);
+        if ((alreadyUsedFileBytes.Length & 0b111) != 0) // divisible by 8?
+        {
+            throw new ArgumentException("Incorrect byte count of used questions file (must be divisible through 8)", nameof(filePath));
+        }
+
+        _alreadyUsed = new List<int>[_storage.FileCount];
+        for (var i = 0; i < _alreadyUsed.Length; i++)
+        {
+            _alreadyUsed[i] = [];
+        }
+
+        foreach (var (fileIndex, questionIndex) in alreadyUsedFileBytes.BytesToInts().Group2())
+        {
+            if (fileIndex < 0 || fileIndex >= _storage.FileCount
+                || questionIndex < 0 || questionIndex >= _storage.QuestionCount(fileIndex))
+            {
+                Console.WriteLine($"The used questions file appears to indicate a used question out of bounds: "
+                    + $"fileIndex:{fileIndex}/{_storage.FileCount}, "
+                    + $"questionIndex:{questionIndex}/{_storage.QuestionCountOr(fileIndex, -1)}");
+            }
+            else
+            {
+                _alreadyUsed[fileIndex].Add(questionIndex);
+            }
+        }
     }
 
 
-    public string GetRandom()
+    public bool TryGetRandom(out string result)
     {
-        var index = Random.Shared.Next(_storage.QuestionCount - _alreadyUsed.Count);
-        return GetIgnoringAlreadyUsed(index);
+        if (TotalUsedQuestions == _storage.TotalQuestionCount)
+        {
+            result = null!;
+            return false;
+        }
+
+        // I know this means that not every question has the
+        // exact same chance of appearing, and I don't care. This is good enough
+        var unusedFile = Random.Shared.Next(_storage.FileCount - AlreadyUsedFiles().Count());
+        var actualFile = UnusedToActualFile(unusedFile);
+        var unusedQuestion = Random.Shared.Next(_storage.QuestionCount(unusedFile) - _alreadyUsed[actualFile].Count);
+        var actualQuestion = UnusedToActualQuestion(unusedQuestion, actualFile);
+
+        result = _storage.GetQuestion(actualFile, actualQuestion);
+        return true;
     }
 
 
-    private string GetIgnoringAlreadyUsed(int index)
+    private IEnumerable<int> AlreadyUsedFiles()
     {
-        var usedBefore = _alreadyUsed.Count(i => i <= index);
-        var actualIndex = index + usedBefore;
-
-        _alreadyUsed.Add(actualIndex);
-        File.AppendAllBytes(_filePath, BitConverter.GetBytes(actualIndex));
-
-        return _storage[actualIndex];
+        return Enumerable.Range(0, _alreadyUsed.Length).Where(i => _alreadyUsed[i].Count == _storage.QuestionCount(i));
     }
+
+
+    private int UnusedToActualFile(int unusedFileIndex)
+    {
+        foreach (var i in AlreadyUsedFiles())
+        {
+            if (i <= unusedFileIndex)
+            {
+                unusedFileIndex++;
+            }
+        }
+        return unusedFileIndex;
+    }
+
+
+    private int UnusedToActualQuestion(int unusedQuestionIndex, int actualFileIndex)
+    {
+        foreach (var i in _alreadyUsed[actualFileIndex])
+        {
+            if (i <= unusedQuestionIndex)
+            {
+                unusedQuestionIndex++;
+            }
+        }
+        return unusedQuestionIndex;
+    }
+
+
+    private int TotalUsedQuestions => _alreadyUsed.Sum(x => x.Count);
 
 
     private readonly string _filePath;
     private readonly QuestionStorage _storage;
-    private readonly List<int> _alreadyUsed;
+    // _alreadyUsed[fileIndex] yields the used questionIndices for that specified file
+    private readonly List<int>[] _alreadyUsed;
 }

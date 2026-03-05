@@ -59,12 +59,27 @@ public static class Util
     }
 
 
+    /// <summary>
+    /// Ignores the last bytes if a's count is not divisible through 4
+    /// </summary>
     public static IEnumerable<int> BytesToInts(this byte[] a)
     {
-        var i = 0;
-        for (; i < a.Length; i += 4)
-        {
+        for (var i = 0; i < a.Length; i += 4)
             yield return BitConverter.ToInt32(a, i);
+    }
+
+
+    /// <summary>
+    /// Ignores the last element if the passed enums count is not divisible through 2
+    /// </summary>
+    public static IEnumerable<(T l, T r)> Group2<T>(this IEnumerable<T> e)
+    {
+        var etor = e.GetEnumerator();
+        while (etor.MoveNext())
+        {
+            var t = etor.Current;
+            if (!etor.MoveNext()) yield break;
+            yield return (t, etor.Current);
         }
     }
 }
