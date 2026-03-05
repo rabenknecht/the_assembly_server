@@ -26,7 +26,7 @@ internal class UniqueQuestionGetter
             if (fileIndex < 0 || fileIndex >= _storage.FileCount
                 || questionIndex < 0 || questionIndex >= _storage.QuestionCount(fileIndex))
             {
-                Console.WriteLine($"The used questions file appears to indicate a used question out of bounds: "
+                Console.WriteLine($"The used questions file appears to indicate a used question out of bounds. Ignoring it. "
                     + $"fileIndex:{fileIndex}/{_storage.FileCount}, "
                     + $"questionIndex:{questionIndex}/{_storage.QuestionCountOr(fileIndex, -1)}");
             }
@@ -52,6 +52,10 @@ internal class UniqueQuestionGetter
         var actualFile = UnusedToActualFile(unusedFile);
         var unusedQuestion = Random.Shared.Next(_storage.QuestionCount(unusedFile) - _alreadyUsed[actualFile].Count);
         var actualQuestion = UnusedToActualQuestion(unusedQuestion, actualFile);
+
+        _alreadyUsed[actualFile].Add(actualQuestion);
+        File.AppendAllBytes(_filePath, BitConverter.GetBytes(actualFile));
+        File.AppendAllBytes(_filePath, BitConverter.GetBytes(actualQuestion));
 
         result = _storage.GetQuestion(actualFile, actualQuestion);
         return true;
