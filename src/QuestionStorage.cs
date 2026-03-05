@@ -85,7 +85,7 @@ internal class QuestionStorage
 
             FilePath = filePath;
             using var stream = File.OpenRead(filePath);
-            _fileEndExclusive = stream.Length;
+            _fileEndExclusive = 0;
             _questions = [];
         }
 
@@ -133,26 +133,32 @@ internal class QuestionStorage
             // Skip over all linebreaks, they break implementation below
             // They also allow questions to be separated by 2 or more linebreaks!
             int b;
-            while ((b = readStream.ReadByte()) != '\n' && b != -1) ;
-
-            long startInclusive = readStream.Position;
-            long endExclusive;
+            while ((b = readStream.ReadByte()) == '\n') ;
 
             int prevByte = readStream.ReadByte();
-            if (prevByte == -1) return;
+            if (prevByte == -1)
+            {
+                _fileEndExclusive = readStream.Position - 1;
+                return;
+            }
+
             int curByte = readStream.ReadByte();
+            long startInclusive = readStream.Position - 3;
+            long endExclusive;
 
             while (true)
             {
                 if (curByte == -1)
                 {
-                    endExclusive = readStream.Position;
+                    endExclusive = readStream.Position - 1;
+                    // Setting _fileEndExclusive redundant: next iteration will update it
                     break;
                 }
 
                 if (curByte == '\n' && prevByte == '\n')
                 {
-                    endExclusive = readStream.Position - 1;
+                    endExclusive = readStream.Position - 2;
+                    // Setting _fileEndExclusive redundant: next iteration will update it
                     break;
                 }
 
