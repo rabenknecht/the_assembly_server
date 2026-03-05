@@ -57,4 +57,14 @@ public static class Util
         pass = split[1];
         return true;
     }
+
+
+    public static IEnumerable<int> BytesToInts(this byte[] a)
+    {
+        var i = 0;
+        for (; i < a.Length; i += 4)
+        {
+            yield return BitConverter.ToInt32(a, i);
+        }
+    }
 }

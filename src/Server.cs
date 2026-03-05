@@ -101,7 +101,7 @@ public class Server
 
     public void ReloadQuestions()
     {
-        throw new NotImplementedException();
+        // TODO: Remove, questions automatically reload on get requests on QuestionStorages
     }
 
 
