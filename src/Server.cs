@@ -18,14 +18,24 @@ public class Server
         _listener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
         _urls = [.. urls];
 
-        if (!Directory.Exists(fileStorage)) Directory.CreateDirectory(fileStorage);
-        _passStorage = new PassStorage(fileStorage);
+        var passDir = Path.Combine(fileStorage, "passwords");
+        var usedQuestionsFile = Path.Combine(fileStorage, "usedQuestions");
+        if (File.Exists(passDir)) throw new ArgumentException("Invalid fileStorage structure");
+        if (Directory.Exists(usedQuestionsFile)) throw new ArgumentException("Invalid fileStorage structure");
+        if (!Directory.Exists(passDir)) Directory.CreateDirectory(passDir);
+        if (!File.Exists(usedQuestionsFile)) File.Create(usedQuestionsFile).Close();
+
+        _passStorage = new PassStorage(passDir);
+        _questionStorage = new QuestionStorage(questionFiles);
+        _questionGetter = new UniqueQuestionGetter(_questionStorage, usedQuestionsFile);
     }
 
 
     public void RunAsync()
     {
-        new Thread(RunForever).Start();
+        var t = new Thread(RunForever);
+        t.Name = "Server Worker";
+        t.Start();
     }
 
 
@@ -99,9 +109,15 @@ public class Server
     }
 
 
+    /// <summary>
+    /// Should be called when questions have been moved or removed from the questionFiles.
+    /// Also clears the usedQuestionsFile.
+    /// </summary>
     public void ReloadQuestions()
     {
-        // TODO: Remove, questions automatically reload on get requests on QuestionStorages
+        _questionStorage = new QuestionStorage(_questionStorage.FilePaths);
+        File.WriteAllBytes(_questionGetter.FilePath, []);
+        _questionGetter = new UniqueQuestionGetter(_questionStorage, _questionGetter.FilePath);
     }
 
 
@@ -109,7 +125,10 @@ public class Server
     /// Usually happens when we server ran out of unique question.</returns>
     public bool NewRandomEntry()
     {
-        throw new NotImplementedException();
+        if (!_questionGetter.TryGetRandom(out var question)) return false;
+
+        // TODO: Save the new entry!
+        return true;
     }
 
 
@@ -146,6 +165,8 @@ public class Server
 
 
     private readonly HttpListener _listener;
-    private readonly PassStorage _passStorage;
     private readonly IReadOnlyCollection<string> _urls;
+    private readonly PassStorage _passStorage;
+    private QuestionStorage _questionStorage;
+    private UniqueQuestionGetter _questionGetter;
 }

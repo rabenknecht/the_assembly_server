@@ -90,6 +90,6 @@ public static class Shell
 
     private static void Run(Config config)
     {
-        new Server(config.UrlPrefixes, config.DatabankPath).RunForever();
+        // new Server(config.UrlPrefixes, config.DatabankPath).RunForever();
     }
 }

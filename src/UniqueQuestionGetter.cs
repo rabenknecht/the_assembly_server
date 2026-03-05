@@ -7,7 +7,7 @@ internal class UniqueQuestionGetter
     public UniqueQuestionGetter(QuestionStorage storage, string filePath)
     {
         _storage = storage;
-        _filePath = filePath;
+        FilePath = filePath;
 
         var alreadyUsedFileBytes = File.ReadAllBytes(filePath);
         if ((alreadyUsedFileBytes.Length & 0b111) != 0) // divisible by 8?
@@ -38,6 +38,11 @@ internal class UniqueQuestionGetter
     }
 
 
+    public readonly string FilePath;
+
+
+    /// <returns>If a unique random question could be fetched from the storage.
+    /// This usually fails when all questions are already used!</returns>
     public bool TryGetRandom(out string result)
     {
         if (TotalUsedQuestions == _storage.TotalQuestionCount)
@@ -54,8 +59,8 @@ internal class UniqueQuestionGetter
         var actualQuestion = UnusedToActualQuestion(unusedQuestion, actualFile);
 
         _alreadyUsed[actualFile].Add(actualQuestion);
-        File.AppendAllBytes(_filePath, BitConverter.GetBytes(actualFile));
-        File.AppendAllBytes(_filePath, BitConverter.GetBytes(actualQuestion));
+        File.AppendAllBytes(FilePath, BitConverter.GetBytes(actualFile));
+        File.AppendAllBytes(FilePath, BitConverter.GetBytes(actualQuestion));
 
         result = _storage.GetQuestion(actualFile, actualQuestion);
         return true;
@@ -97,7 +102,6 @@ internal class UniqueQuestionGetter
     private int TotalUsedQuestions => _alreadyUsed.Sum(x => x.Count);
 
 
-    private readonly string _filePath;
     private readonly QuestionStorage _storage;
     // _alreadyUsed[fileIndex] yields the used questionIndices for that specified file
     private readonly List<int>[] _alreadyUsed;

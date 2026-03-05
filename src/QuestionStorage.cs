@@ -13,6 +13,9 @@ internal class QuestionStorage
     }
 
 
+    public IEnumerable<string> FilePaths => _singleFiles.Select(f => f.FilePath);
+
+
     public int FileCount => _singleFiles.Length;
 
 
@@ -78,11 +81,16 @@ internal class QuestionStorage
     {
         public SingleFile(string filePath)
         {
-            _filePath = filePath;
+            if (!File.Exists(filePath)) throw new FileNotFoundException("Passed file does not exist");
+
+            FilePath = filePath;
             using var stream = File.OpenRead(filePath);
             _fileEndExclusive = stream.Length;
             _questions = [];
         }
+
+
+        public readonly string FilePath;
 
 
         public int QuestionCount
@@ -99,7 +107,7 @@ internal class QuestionStorage
         {
             get
             {
-                using var stream = File.OpenRead(_filePath);
+                using var stream = File.OpenRead(FilePath);
                 stream.Seek(_fileEndExclusive, SeekOrigin.Begin);
                 LoadQuestions(stream);
 
@@ -113,7 +121,7 @@ internal class QuestionStorage
 
         private void LoadQuestions(long pointerStart)
         {
-            using var stream = File.OpenRead(_filePath);
+            using var stream = File.OpenRead(FilePath);
             stream.Seek(pointerStart, SeekOrigin.Begin);
             LoadQuestions(stream);
         }
@@ -125,7 +133,7 @@ internal class QuestionStorage
             // Skip over all linebreaks, they break implementation below
             // They also allow questions to be separated by 2 or more linebreaks!
             int b;
-            while ((b = readStream.ReadByte()) != '\n') ;
+            while ((b = readStream.ReadByte()) != '\n' && b != -1) ;
 
             long startInclusive = readStream.Position;
             long endExclusive;
@@ -161,7 +169,6 @@ internal class QuestionStorage
         }
 
 
-        private readonly string _filePath;
         private long _fileEndExclusive;
         private List<(long startInclusive, long endExclusive)> _questions;
         private static byte[] _buffer = new byte[1024];

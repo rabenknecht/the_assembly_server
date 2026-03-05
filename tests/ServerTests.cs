@@ -28,8 +28,8 @@ public class ServerTests
         if (Directory.Exists(TEST_DIR)) Directory.Delete(TEST_DIR, true);
         if (Directory.Exists(SERVER_DIR)) Directory.Delete(SERVER_DIR, true);
 
-        Directory.CreateDirectory(TEST_DIR);
-        Directory.CreateDirectory(SERVER_DIR);
+        Directory.CreateDirectory(TEST_DIR); // We need the testdir for the questionfile
+        File.WriteAllText(QUESTION_FILE, string.Empty);
 
         _server = new Server(Url, SERVER_DIR, QUESTION_FILE);
         _client = new HttpClient() { BaseAddress = new Uri(Url) };
