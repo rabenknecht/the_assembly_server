@@ -85,6 +85,7 @@ internal class QuestionStorage
             if (lastWrite == _bufferedSinceLastWrite) return;
 
             _bufferedSinceLastWrite = lastWrite;
+            // TODO: Improve textparsing
             _bufferedQuestions = File.ReadAllText(FilePath).TrimEnd('\n').Split("\n\n");
         }
 

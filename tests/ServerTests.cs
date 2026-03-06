@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 
 namespace TheAssembly.Server.Test;
@@ -393,6 +394,136 @@ public class ServerTests
             new string[] { "Q1V1", "Q1V2", "Q2V1", "Q2V2", "Q3V1", "Q3V2", "Q4V1", "Q4V2" },
             "entry returns incorrect voteOptions"
         );
+    }
+
+
+    [TestMethod]
+    public async Task EntryVote_CorrectVote_OK()
+    {
+        // Create user and authenticate client
+        await UserPost(new JoinRecord("user", ""));
+        _client.AddBasicAuthHeader("user", "");
+
+        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
+            + "No\n"
+            + "Yes\n"
+            + "Sometimes\n");
+        _server.NewRandomEntry();
+
+        var response = await _client.PostAsync("entry/vote", new StringContent("Yes", Encoding.UTF8), TestContext.CancellationToken);
+
+        Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+    }
+
+
+    [TestMethod]
+    public async Task EntryVote_IncorrectVote_NotOK()
+    {
+        // Create user and authenticate client
+        await UserPost(new JoinRecord("user", ""));
+        _client.AddBasicAuthHeader("user", "");
+
+        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
+            + "No\n"
+            + "Yes\n"
+            + "Sometimes\n");
+        _server.NewRandomEntry();
+
+        var response = await _client.PostAsync("entry/vote", new StringContent("Wiener", Encoding.UTF8), TestContext.CancellationToken);
+
+        Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+    }
+
+
+    [TestMethod]
+    public async Task EntryVote_DoubleVote_OK()
+    {
+        // Create user and authenticate client
+        await UserPost(new JoinRecord("user", ""));
+        _client.AddBasicAuthHeader("user", "");
+
+        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
+            + "No\n"
+            + "Yes\n"
+            + "Sometimes\n");
+        _server.NewRandomEntry();
+
+        await _client.PostAsync("entry/vote", new StringContent("No", Encoding.UTF8), TestContext.CancellationToken);
+        var response = await _client.PostAsync("entry/vote", new StringContent("Yes", Encoding.UTF8), TestContext.CancellationToken);
+
+        Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+    }
+
+
+    [TestMethod]
+    public async Task EntryCurrent_ShowCorrectVotes()
+    {
+        // Create user and authenticate client
+        await UserPost(new JoinRecord("user1", ""));
+        await UserPost(new JoinRecord("user2", ""));
+        await UserPost(new JoinRecord("user3", ""));
+        await UserPost(new JoinRecord("user4", ""));
+        await UserPost(new JoinRecord("user5", ""));
+        await UserPost(new JoinRecord("user6", ""));
+
+        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
+            + "No\n"
+            + "Yes\n"
+            + "Sometimes\n");
+        _server.NewRandomEntry();
+
+        _client.AddBasicAuthHeader("user1", "");
+        await _client.PostAsync("entry/vote", new StringContent("Yes", Encoding.UTF8), TestContext.CancellationToken);
+
+        _client.AddBasicAuthHeader("user6", "");
+        await _client.PostAsync("entry/vote", new StringContent("Yes", Encoding.UTF8), TestContext.CancellationToken);
+
+        _client.AddBasicAuthHeader("user3", "");
+        await _client.PostAsync("entry/vote", new StringContent("No", Encoding.UTF8), TestContext.CancellationToken);
+
+
+        var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
+        var responseText = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
+        var actual = JsonSerializer.Deserialize<EntryRecord>(responseText);
+
+        Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        var yesVoteOption = actual!.voteOptions!.First(v => v.voteOption == "Yes");
+        CollectionAssert.AreEquivalent(new string[] { "user1", "user6" }, yesVoteOption.votedBy);
+        var noVoteOption = actual!.voteOptions!.First(v => v.voteOption == "No");
+        CollectionAssert.AreEquivalent(new string[] { "user3" }, noVoteOption.votedBy);
+        var sometimesVoteOption = actual!.voteOptions!.First(v => v.voteOption == "Sometimes");
+        CollectionAssert.AreEquivalent(new string[] { }, sometimesVoteOption.votedBy);
+    }
+
+
+    [TestMethod]
+    public async Task EntryCurrent_ShowUpdatedVote()
+    {
+        // Create user and authenticate client
+        await UserPost(new JoinRecord("user1", ""));
+
+        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
+            + "No\n"
+            + "Yes\n"
+            + "Sometimes\n");
+        _server.NewRandomEntry();
+
+        _client.AddBasicAuthHeader("user1", "");
+        await _client.PostAsync("entry/vote", new StringContent("Yes", Encoding.UTF8), TestContext.CancellationToken);
+        await _client.PostAsync("entry/vote", new StringContent("No", Encoding.UTF8), TestContext.CancellationToken);
+
+
+        var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
+        var responseText = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
+        var actual = JsonSerializer.Deserialize<EntryRecord>(responseText);
+
+        Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        var yesVoteOption = actual!.voteOptions!.First(v => v.voteOption == "Yes");
+        CollectionAssert.AreEquivalent(new string[] { }, yesVoteOption.votedBy);
+        var noVoteOption = actual!.voteOptions!.First(v => v.voteOption == "No");
+        CollectionAssert.AreEquivalent(new string[] { "user1" }, noVoteOption.votedBy);
+        var sometimesVoteOption = actual!.voteOptions!.First(v => v.voteOption == "Sometimes");
+        CollectionAssert.AreEquivalent(new string[] { }, sometimesVoteOption.votedBy);
     }
 
 
