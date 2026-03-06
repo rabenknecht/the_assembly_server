@@ -29,6 +29,10 @@ public static class Shell
             WriteLine($"-d [directory]              Sets the directory in which the server saves its data for persistence.");
             WriteLine($"                            The server loads data from where when restarted.");
             WriteLine($"                            Defaults to {DEFAULT_SERVERDIR} when no directory is passed, or when omitted.");
+            WriteLine();
+            WriteLine($"-c                          Clears the servers persistent storage.");
+            WriteLine();
+            WriteLine($"-ne                         Immediately loads a new random entry from the passed questions.");
             return;
         }
 
@@ -53,12 +57,33 @@ public static class Shell
             WriteLine($"No directory for the server has been passed. Using {DEFAULT_SERVERDIR} instead.");
         }
 
+        var server = new Server(urls, serverDir, questionFiles);
+        
+        if (ExtractOptionNoArgs(argList, "-c"))
+        {
+            server.ClearStorage();
+            WriteLine("Server persistent storage cleared.");
+        }
+
+        if (ExtractOptionNoArgs(argList, "-ne"))
+        {
+            if (server.NewRandomEntry())
+            {
+                WriteLine("New random entry loaded.");
+            }
+            else
+            {
+                WriteLine($"Could not create a new random entry. Either no question files "
+                    + "have been passed, or all questions have already been picked");
+            }
+        }
+
         if (argList.Count != 0)
         {
             WriteLine($"Some arguments could not be parsed: {string.Join(", ", argList.Select(s => $"\"{s}\""))}");
         }
 
-        new Server(urls, serverDir, questionFiles).RunForever();
+        server.RunForever();
     }
 
 
