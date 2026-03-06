@@ -79,9 +79,9 @@ public class Server
             }
 
             // users.GET
-            else if (request.HttpMethod == "GET"
-                && CheckLocalRequestUrl(request, "users")
-                && authUser != null)
+            else if (authUser != null
+                && request.HttpMethod == "GET"
+                && CheckLocalRequestUrl(request, "users"))
             {
                 var responseString = string.Join('\n', _passStorage.EnumerateUsers);
 
@@ -90,13 +90,23 @@ public class Server
             }
 
             // entry/current.GET
-            else if (request.HttpMethod == "GET"
+            else if (authUser != null
+                && request.HttpMethod == "GET"
                 && CheckLocalRequestUrl(request, "entry/current")
-                && authUser != null
                 && _entryStorage.TryGetLastJson(out var entryJson))
             {
                 response.StatusCode = (int) HttpStatusCode.OK;
                 response.OutputStream.Write(Encoding.UTF8.GetBytes(entryJson));
+            }
+
+            // entry.GET
+            else if (authUser != null
+                && request.HttpMethod == "GET"
+                && CheckLocalRequestUrl(request, "entry"))
+            {
+                var entriesJson = _entryStorage.GetAllExceptLastJson();
+                response.StatusCode = (int) HttpStatusCode.OK;
+                response.OutputStream.Write(Encoding.UTF8.GetBytes(entriesJson));
             }
 
             else

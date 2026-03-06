@@ -46,6 +46,13 @@ public class EntryStorage
     }
 
 
+    public string GetAllExceptLastJson()
+    {
+        var saved = GetSaved();
+        return JsonSerializer.Serialize(saved.SubArray(0, saved.Length - 1));
+    }
+
+
     public int EntryCount => GetSaved().Length;
 
 
