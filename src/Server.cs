@@ -153,7 +153,10 @@ public class Server
             split[0],
             DateTimeOffset.Now,
             endsWhen ?? DateTimeOffset.MaxValue,
-            split.Skip(1).Select(v => new VoteOptionRecord(v, [])).ToArray()
+            split.Skip(1)
+                .SelectMany(s => s.Trim() == ":u" ? _passStorage.EnumerateUsers : [s])
+                .Select(v => new VoteOptionRecord(v, []))
+                .ToArray()
         );
 
         _entryStorage.AddLast(entry);

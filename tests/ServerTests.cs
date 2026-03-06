@@ -275,7 +275,10 @@ public class ServerTests
         Assert.AreEqual("Userquestion?", actualEntry.question);
         CollectionAssert.AreEquivalent(
             new string[] { "Nobody", "user1", "user2", "user3" },
-            actualEntry.voteOptions.Select(v => v.voteOption).ToList());
+            actualEntry.voteOptions.Select(v => v.voteOption).ToList(),
+            // TODO: Dedicated test for that shit
+            "Incorrect voting options. Note that this test is also an edgecase when "
+            + "the questionmaker forgets the linebreak at the last line (which we should handle...)");
         Assert.IsTrue(actualEntry.voteOptions.All(v => v.votedBy!.Length == 0)); // No one voted
     }
 

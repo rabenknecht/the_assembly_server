@@ -148,10 +148,19 @@ internal class QuestionStorage
 
             while (true)
             {
+                // Edgecase: Editor forgot the last linebreak
+                if (prevByte == '\n' && curByte == -1)
+                {
+                    long endExclusive = readStream.Position - 1;
+                    _fileEndExclusive = readStream.Position;
+                    SaveQuestion(startInclusive, endExclusive);
+                    break;
+                }
+
                 if (curByte == -1)
                 {
                     long endExclusive = readStream.Position;
-                    _fileEndExclusive = endExclusive;
+                    _fileEndExclusive = readStream.Position;
                     SaveQuestion(startInclusive, endExclusive);
                     break;
                 }
@@ -159,7 +168,7 @@ internal class QuestionStorage
                 if (curByte == '\n' && prevByte == '\n')
                 {
                     long endExclusive = readStream.Position - 2;
-                    _fileEndExclusive = endExclusive;
+                    _fileEndExclusive = readStream.Position;
                     SaveQuestion(startInclusive, endExclusive);
                     LoadQuestions(readStream);
                     break;
