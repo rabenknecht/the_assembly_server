@@ -249,16 +249,16 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task EntryCurrent_QuestionWithLastSymbolLinebreak_CorrectVoteOptions()
+    public async Task EntryCurrent_QuestionWithDifficultFormat_CorrectVoteOptions()
     {
         // Create user and authenticate client
         await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
-        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
-            + "No\n"
-            + "Yes\n"
-            + "Sometimes\n");
+        File.WriteAllText(QUESTION_FILE, "\tDo you still love me?\n"
+            + "    No\n"
+            + "Yes    \n"
+            + "Sometimes\n ");
         _server.NewRandomEntry();
 
         var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
@@ -385,7 +385,7 @@ public class ServerTests
         (
             actualEntries.Select(e => e.question).ToList(),
             new string[] { "Q1", "Q2", "Q3", "Q4" },
-            "entry returns incorrect questions"
+            "entry returns incorrect questions: " + string.Join(", ", actualEntries.Select(e => e.question))
         );
         CollectionAssert.IsSubsetOf // Good enough. Users will notice incoherent voteoptions anyway
         (

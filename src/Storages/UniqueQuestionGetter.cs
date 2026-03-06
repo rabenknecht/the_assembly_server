@@ -88,6 +88,7 @@ internal class UniqueQuestionGetter
 
     private int UnusedToActualQuestion(int unusedQuestionIndex, int actualFileIndex)
     {
+        _alreadyUsed[actualFileIndex].Sort();
         foreach (var i in _alreadyUsed[actualFileIndex])
         {
             if (i <= unusedQuestionIndex)
@@ -103,6 +104,6 @@ internal class UniqueQuestionGetter
 
 
     private readonly QuestionStorage _storage;
-    // _alreadyUsed[fileIndex] yields the used questionIndices for that specified file
+    // _alreadyUsed[fileIndex] yields the used questionIndices for that specified file.
     private readonly List<int>[] _alreadyUsed;
 }
