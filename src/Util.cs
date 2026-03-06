@@ -82,4 +82,13 @@ public static class Util
             yield return (t, etor.Current);
         }
     }
+
+
+    public static T[] Add<T>(this T[] array, T element)
+    {
+        var newArray = new T[array.Length + 1];
+        Array.Copy(array, newArray, array.Length);
+        newArray[array.Length] = element;
+        return newArray;
+    }
 }

@@ -11,23 +11,31 @@ public class Server
 
     public Server(IEnumerable<string> urls, string fileStorage, IEnumerable<string> questionFiles)
     {
+        var passDir = Path.Combine(fileStorage, "passwords");
+        var usedQuestionsFile = Path.Combine(fileStorage, "usedQuestions");
+        var entryFile = Path.Combine(fileStorage, "entries");
+
+        if (File.Exists(passDir)) throw new ArgumentException("Invalid fileStorage structure");
+        if (Directory.Exists(usedQuestionsFile)) throw new ArgumentException("Invalid fileStorage structure");
+
+        if (!Directory.Exists(passDir)) Directory.CreateDirectory(passDir);
+        if (!File.Exists(usedQuestionsFile)) File.Create(usedQuestionsFile).Close();
+        // EntryStorage automatically generates its file
+        // if (!File.Exists(entryFile)) File.Create(entryFile).Close();
+
+
+        _passStorage = new PassStorage(passDir);
+        _questionStorage = new QuestionStorage(questionFiles);
+        _questionGetter = new UniqueQuestionGetter(_questionStorage, usedQuestionsFile);
+        _entryStorage = new EntryStorage(entryFile);
+
+
         _listener = new HttpListener();
         // I have no fucking idea how HttpListeners actually authenticate Basic.
         // It always ends up forbidding every connection, so we just authenticate
         // the user ourselves
         _listener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
         _urls = [.. urls];
-
-        var passDir = Path.Combine(fileStorage, "passwords");
-        var usedQuestionsFile = Path.Combine(fileStorage, "usedQuestions");
-        if (File.Exists(passDir)) throw new ArgumentException("Invalid fileStorage structure");
-        if (Directory.Exists(usedQuestionsFile)) throw new ArgumentException("Invalid fileStorage structure");
-        if (!Directory.Exists(passDir)) Directory.CreateDirectory(passDir);
-        if (!File.Exists(usedQuestionsFile)) File.Create(usedQuestionsFile).Close();
-
-        _passStorage = new PassStorage(passDir);
-        _questionStorage = new QuestionStorage(questionFiles);
-        _questionGetter = new UniqueQuestionGetter(_questionStorage, usedQuestionsFile);
     }
 
 
@@ -106,6 +114,7 @@ public class Server
     public void ClearStorage()
     {
         _passStorage.Clear();
+        _entryStorage.Clear();
     }
 
 
@@ -121,13 +130,23 @@ public class Server
     }
 
 
+    /// <param name="endsWhen">Defaults to max time.</param>
     /// <returns>False if loading a new question failed.
     /// Usually happens when we server ran out of unique question.</returns>
-    public bool NewRandomEntry()
+    public bool NewRandomEntry(DateTimeOffset? endsWhen = null)
     {
         if (!_questionGetter.TryGetRandom(out var question)) return false;
 
-        // TODO: Save the new entry!
+        var split = question.Split('\n');
+        var entry = new EntryRecord
+        (
+            split[0],
+            DateTimeOffset.Now,
+            endsWhen ?? DateTimeOffset.MaxValue,
+            split.Skip(1).Select(v => new VoteOptionRecord(v, [])).ToArray()
+        );
+
+        _entryStorage.AddLast(entry);
         return true;
     }
 
@@ -169,4 +188,5 @@ public class Server
     private readonly PassStorage _passStorage;
     private QuestionStorage _questionStorage;
     private UniqueQuestionGetter _questionGetter;
+    private EntryStorage _entryStorage;
 }
