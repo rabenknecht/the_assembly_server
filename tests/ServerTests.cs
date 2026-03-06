@@ -244,7 +244,7 @@ public class ServerTests
         Assert.AreEqual("Do you still love me?", actualEntry.question);
         CollectionAssert.AreEquivalent(
             new string[] { "No", "Yes", "Sometimes" },
-            actualEntry.voteOptions.Select(v => v.voteOption).ToList());
+            actualEntry.voteOptions.Select(v => v.votingWhat).ToList());
         Assert.IsTrue(actualEntry.voteOptions.All(v => v.votedBy!.Length == 0));
     }
 
@@ -273,7 +273,7 @@ public class ServerTests
         Assert.AreEqual("Do you still love me?", actualEntry.question);
         CollectionAssert.AreEquivalent(
             new string[] { "No", "Yes", "Sometimes" },
-            actualEntry.voteOptions.Select(v => v.voteOption).ToList());
+            actualEntry.voteOptions.Select(v => v.votingWhat).ToList());
         Assert.IsTrue(actualEntry.voteOptions.All(v => v.votedBy!.Length == 0));
     }
 
@@ -304,7 +304,7 @@ public class ServerTests
         Assert.AreEqual("Userquestion?", actualEntry.question);
         CollectionAssert.AreEquivalent(
             new string[] { "Nobody", "user1", "user2", "user3" },
-            actualEntry.voteOptions.Select(v => v.voteOption).ToList());
+            actualEntry.voteOptions.Select(v => v.votingWhat).ToList());
         Assert.IsTrue(actualEntry.voteOptions.All(v => v.votedBy!.Length == 0)); // No one voted
     }
 
@@ -343,7 +343,7 @@ public class ServerTests
         Assert.AreEqual("Who sucks more?", actualEntry.question);
         CollectionAssert.AreEquivalent(
             new string[] { "Price", "Picard", "Susane", "Your mother" },
-            actualEntry.voteOptions.Select(v => v.voteOption).ToList());
+            actualEntry.voteOptions.Select(v => v.votingWhat).ToList());
         Assert.IsTrue(actualEntry.voteOptions.All(v => v.votedBy!.Length == 0));
     }
 
@@ -390,7 +390,7 @@ public class ServerTests
         );
         CollectionAssert.IsSubsetOf // Good enough. Users will notice incoherent voteoptions anyway
         (
-            actualEntries.SelectMany(e => e.voteOptions!).Select(v => v.voteOption).ToList(),
+            actualEntries.SelectMany(e => e.voteOptions!).Select(v => v.votingWhat).ToList(),
             new string[] { "Q1V1", "Q1V2", "Q2V1", "Q2V2", "Q3V1", "Q3V2", "Q4V1", "Q4V2" },
             "entry returns incorrect voteOptions"
         );
@@ -487,11 +487,11 @@ public class ServerTests
         var actual = JsonSerializer.Deserialize<EntryRecord>(responseText);
 
         Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
-        var yesVoteOption = actual!.voteOptions!.First(v => v.voteOption == "Yes");
+        var yesVoteOption = actual!.voteOptions!.First(v => v.votingWhat == "Yes");
         CollectionAssert.AreEquivalent(new string[] { "user1", "user6" }, yesVoteOption.votedBy);
-        var noVoteOption = actual!.voteOptions!.First(v => v.voteOption == "No");
+        var noVoteOption = actual!.voteOptions!.First(v => v.votingWhat == "No");
         CollectionAssert.AreEquivalent(new string[] { "user3" }, noVoteOption.votedBy);
-        var sometimesVoteOption = actual!.voteOptions!.First(v => v.voteOption == "Sometimes");
+        var sometimesVoteOption = actual!.voteOptions!.First(v => v.votingWhat == "Sometimes");
         CollectionAssert.AreEquivalent(new string[] { }, sometimesVoteOption.votedBy);
     }
 
@@ -518,11 +518,11 @@ public class ServerTests
         var actual = JsonSerializer.Deserialize<EntryRecord>(responseText);
 
         Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
-        var yesVoteOption = actual!.voteOptions!.First(v => v.voteOption == "Yes");
+        var yesVoteOption = actual!.voteOptions!.First(v => v.votingWhat == "Yes");
         CollectionAssert.AreEquivalent(new string[] { }, yesVoteOption.votedBy);
-        var noVoteOption = actual!.voteOptions!.First(v => v.voteOption == "No");
+        var noVoteOption = actual!.voteOptions!.First(v => v.votingWhat == "No");
         CollectionAssert.AreEquivalent(new string[] { "user1" }, noVoteOption.votedBy);
-        var sometimesVoteOption = actual!.voteOptions!.First(v => v.voteOption == "Sometimes");
+        var sometimesVoteOption = actual!.voteOptions!.First(v => v.votingWhat == "Sometimes");
         CollectionAssert.AreEquivalent(new string[] { }, sometimesVoteOption.votedBy);
     }
 

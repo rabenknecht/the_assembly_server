@@ -53,7 +53,20 @@ public class EntryStorage
     }
 
 
+    public void UpdateLast(EntryRecord entry)
+    {
+        var saved = GetSaved();
+        if (saved.Length == 0) throw new InvalidOperationException("No entry stored");
+        saved[^1] = entry;
+        var serialized = JsonSerializer.Serialize(saved);
+        File.WriteAllText(FilePath, serialized);
+    }
+
+
     public int EntryCount => GetSaved().Length;
+
+
+    public bool IsEmpty => GetSaved().Length == 0;
 
 
     public void Clear()

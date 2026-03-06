@@ -109,6 +109,26 @@ public class Server
                 response.OutputStream.Write(Encoding.UTF8.GetBytes(entriesJson));
             }
 
+            else if (authUser != null
+                && request.HttpMethod == "POST"
+                && CheckLocalRequestUrl(request, "entry/vote")
+                && !_entryStorage.IsEmpty)
+            {
+                var currentEntry = _entryStorage.GetLast()!;
+                var toVote = currentEntry.voteOptions!.FirstOrDefault(v => v.votingWhat == requestContent);
+                if (toVote == null)
+                {
+                    response.StatusCode = (int) HttpStatusCode.NotFound;
+                }
+                else
+                {
+                    RemoveOldVotes(authUser, currentEntry);
+                    toVote.votedBy = toVote.votedBy!.Add(authUser);
+                    _entryStorage.UpdateLast(currentEntry);
+                    response.StatusCode = (int) HttpStatusCode.OK;
+                }
+            }
+
             else
             {
                 response.StatusCode = (int) HttpStatusCode.NotFound;
@@ -194,6 +214,19 @@ public class Server
             var expected = $"{u}{localUrl}";
             return expected == request.Url?.AbsoluteUri;
         });
+    }
+
+
+    private void RemoveOldVotes(string ofUser, EntryRecord inEntry)
+    {
+        foreach (var voteOption in inEntry.voteOptions!)
+        {
+            var authUserVote = voteOption.votedBy.IndexOf(ofUser);
+            if (authUserVote != -1)
+            {
+                voteOption.votedBy = voteOption.votedBy!.Remove(authUserVote);
+            }
+        }
     }
 
 

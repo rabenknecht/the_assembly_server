@@ -19,6 +19,26 @@ public static class Util
     }
 
 
+    public static T[] Add<T>(this T[] array, T element)
+    {
+        var newArray = new T[array.Length + 1];
+        Array.Copy(array, newArray, array.Length);
+        newArray[array.Length] = element;
+        return newArray;
+    }
+
+
+    /// <returns>Null if the passed index is out of bounds</returns>
+    public static T[]? Remove<T>(this T[] array, int indexOfToRemove)
+    {
+        if (indexOfToRemove < 0 || indexOfToRemove >= array.Length) return null;
+        var newArray = new T[array.Length - 1];
+        Array.Copy(array, newArray, indexOfToRemove);
+        Array.Copy(array, indexOfToRemove + 1, newArray, indexOfToRemove, array.Length - indexOfToRemove - 1);
+        return newArray;
+    }
+
+
     public static T[] SubArray<T>(this T[] array, int startInclusive, int length)
     {
         var result = new T[length];
@@ -88,14 +108,5 @@ public static class Util
             if (!etor.MoveNext()) yield break;
             yield return (t, etor.Current);
         }
-    }
-
-
-    public static T[] Add<T>(this T[] array, T element)
-    {
-        var newArray = new T[array.Length + 1];
-        Array.Copy(array, newArray, array.Length);
-        newArray[array.Length] = element;
-        return newArray;
     }
 }
