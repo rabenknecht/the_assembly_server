@@ -134,8 +134,7 @@ internal class QuestionStorage
 
             // Skip over all linebreaks, they break implementation below
             // They also allow questions to be separated by 2 or more linebreaks!
-            int b;
-            while ((b = readStream.ReadByte()) == '\n') ;
+            while (readStream.ReadByte() == '\n') ;
 
             int prevByte = readStream.ReadByte();
             if (prevByte == -1)
@@ -146,21 +145,23 @@ internal class QuestionStorage
 
             int curByte = readStream.ReadByte();
             long startInclusive = readStream.Position - 3;
-            long endExclusive;
 
             while (true)
             {
                 if (curByte == -1)
                 {
-                    endExclusive = readStream.Position;
+                    long endExclusive = readStream.Position;
                     _fileEndExclusive = endExclusive;
+                    SaveQuestion(startInclusive, endExclusive);
                     break;
                 }
 
                 if (curByte == '\n' && prevByte == '\n')
                 {
-                    endExclusive = readStream.Position - 2;
+                    long endExclusive = readStream.Position - 2;
                     _fileEndExclusive = endExclusive;
+                    SaveQuestion(startInclusive, endExclusive);
+                    LoadQuestions(readStream);
                     break;
                 }
 
@@ -168,14 +169,19 @@ internal class QuestionStorage
                 curByte = readStream.ReadByte();
             }
 
-            // We just ignore questions that are too long for the buffer. Who the fuck creates a 1024 symbol long question!?
-            if ((endExclusive - startInclusive) <= _buffer.Length) _questions.Add((startInclusive, endExclusive));
-            else Console.WriteLine("Detected a question that is longer than the buffer to read it. Ignoring it. "
-                + "Hit Rabenknecht so they actually include metadata for the question in question"); // TODO
-
-            if (curByte != -1)
+            return;
+            void SaveQuestion(long startInclusive, long endExclusive)
             {
-                LoadQuestions(readStream);
+                // We just ignore questions that are too long for the buffer. Who the fuck creates a 1024 symbol long question!?
+                if ((endExclusive - startInclusive) <= _buffer.Length)
+                {
+                    _questions.Add((startInclusive, endExclusive));
+                }
+                else
+                {
+                    Console.WriteLine("Detected a question that is longer than the buffer to read it. Ignoring it. "
+                    + "Hit Rabenknecht so they actually include metadata for the question in question"); // TODO
+                }
             }
         }
 
