@@ -57,7 +57,8 @@ public class Server
 
         foreach (var url in _urls) _listener.Prefixes.Add(url);
         _listener.Start();
-        Console.WriteLine("UserServer started. Access me with the following URLs " + string.Join(", ", _listener.Prefixes));
+        Console.WriteLine("Server started. Access me with the following URLs: " 
+            + string.Join(", ", _listener.Prefixes.Select(s => $"\"{s}\"")));
 
         while (true)
         {
