@@ -47,45 +47,6 @@ public static class Util
     }
 
 
-    public static bool TryJsonDeserialize<T>(this Stream stream, out T result)
-        where T : class
-    {
-        result = JsonSerializer.Deserialize<T>(stream)!;
-        return result != null;
-    }
-
-
-    public static bool TryJsonDeserialize<T>(this string? toDeserialize, out T result)
-        where T : class
-    {
-        result = null!;
-        if (toDeserialize == null) return false;
-        result = JsonSerializer.Deserialize<T>(toDeserialize)!;
-        return result != null;
-    }
-
-
-    // TODO: Move into core, or even just to the client
-    public static HttpClient AddBasicAuthHeader(this HttpClient client, string clientid, string clientsecret)
-    {
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", $"{clientid}:{clientsecret}");
-        return client;
-    }
-
-
-    public static bool TryBasicAuthHeaderToUserPass(this string basicAuthHeader, out string user, out string pass)
-    {
-        user = null!;
-        pass = null!;
-        if (basicAuthHeader[..6] != "Basic ") return false;
-        var split = basicAuthHeader[6..].Split(':');
-        if (split.Length != 2) return false;
-        user = split[0];
-        pass = split[1];
-        return true;
-    }
-
-
     /// <summary>
     /// Ignores the last bytes if a's count is not divisible through 4
     /// </summary>
@@ -108,5 +69,28 @@ public static class Util
             if (!etor.MoveNext()) yield break;
             yield return (t, etor.Current);
         }
+    }
+
+
+    public static bool TryJsonDeserialize<T>(this string? toDeserialize, out T result)
+        where T : class
+    {
+        result = null!;
+        if (toDeserialize == null) return false;
+        result = JsonSerializer.Deserialize<T>(toDeserialize)!;
+        return result != null;
+    }
+
+
+    public static bool TryBasicAuthHeaderToUserPass(this string basicAuthHeader, out string user, out string pass)
+    {
+        user = null!;
+        pass = null!;
+        if (basicAuthHeader[..6] != "Basic ") return false;
+        var split = basicAuthHeader[6..].Split(':');
+        if (split.Length != 2) return false;
+        user = split[0];
+        pass = split[1];
+        return true;
     }
 }

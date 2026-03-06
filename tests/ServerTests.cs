@@ -531,4 +531,11 @@ public class ServerTests
     {
         return await _client.PostAsJsonAsync("users", joinRecord, TestContext.CancellationToken);
     }
+
+
+    private static HttpClient AddBasicAuthHeader(this HttpClient client, string clientid, string clientsecret)
+    {
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", $"{clientid}:{clientsecret}");
+        return client;
+    }
 }
