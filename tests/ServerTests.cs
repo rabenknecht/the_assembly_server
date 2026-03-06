@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -530,12 +529,5 @@ public class ServerTests
     private async Task<HttpResponseMessage> UserPost(JoinRecord joinRecord)
     {
         return await _client.PostAsJsonAsync("users", joinRecord, TestContext.CancellationToken);
-    }
-
-
-    private static HttpClient AddBasicAuthHeader(this HttpClient client, string clientid, string clientsecret)
-    {
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", $"{clientid}:{clientsecret}");
-        return client;
     }
 }
