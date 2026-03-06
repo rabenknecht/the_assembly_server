@@ -250,6 +250,35 @@ public class ServerTests
 
 
     [TestMethod]
+    public async Task EntryCurrent_QuestionWithLastSymbolLinebreak_CorrectVoteOptions()
+    {
+        // Create user and authenticate client
+        await UserPost(new JoinRecord("user", ""));
+        _client.AddBasicAuthHeader("user", "");
+
+        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
+            + "No\n"
+            + "Yes\n"
+            + "Sometimes\n");
+        _server.NewRandomEntry();
+
+        var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
+        var responseText = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
+        var actualEntry = JsonSerializer.Deserialize<EntryRecord>(responseText);
+
+        Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        Assert.IsNotNull(actualEntry);
+        Assert.IsNotNull(actualEntry.voteOptions);
+        CollectionAssert.AllItemsAreNotNull(actualEntry.voteOptions);
+        Assert.AreEqual("Do you still love me?", actualEntry.question);
+        CollectionAssert.AreEquivalent(
+            new string[] { "No", "Yes", "Sometimes" },
+            actualEntry.voteOptions.Select(v => v.voteOption).ToList());
+        Assert.IsTrue(actualEntry.voteOptions.All(v => v.votedBy!.Length == 0));
+    }
+
+
+    [TestMethod]
     public async Task EntryCurrent_QuestionWithUserVoteOptions_ReturnsUnvotedQuestion()
     {
         // Create user and authenticate client
@@ -261,7 +290,7 @@ public class ServerTests
 
         File.WriteAllText(QUESTION_FILE, "Userquestion?\n"
             + ":u\n"
-            + "Nobody\n");
+            + "Nobody");
         _server.NewRandomEntry();
 
         var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
@@ -275,10 +304,7 @@ public class ServerTests
         Assert.AreEqual("Userquestion?", actualEntry.question);
         CollectionAssert.AreEquivalent(
             new string[] { "Nobody", "user1", "user2", "user3" },
-            actualEntry.voteOptions.Select(v => v.voteOption).ToList(),
-            // TODO: Dedicated test for that shit
-            "Incorrect voting options. Note that this test is also an edgecase when "
-            + "the questionmaker forgets the linebreak at the last line (which we should handle...)");
+            actualEntry.voteOptions.Select(v => v.voteOption).ToList());
         Assert.IsTrue(actualEntry.voteOptions.All(v => v.votedBy!.Length == 0)); // No one voted
     }
 
