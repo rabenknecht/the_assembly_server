@@ -174,7 +174,6 @@ public class ServerTests
             + "Q4\n"
             + "Q4V1\n"
             + "Q4V2");
-        _server.ReloadQuestions();
         Assert.IsTrue(_server.NewRandomEntry());
         Assert.IsTrue(_server.NewRandomEntry());
         Assert.IsTrue(_server.NewRandomEntry());
@@ -200,7 +199,6 @@ public class ServerTests
             + "Q4\n"
             + "Q4V1\n"
             + "Q4V2");
-        _server.ReloadQuestions();
         _server.NewRandomEntry();
         _server.NewRandomEntry();
         _server.NewRandomEntry();
@@ -233,7 +231,6 @@ public class ServerTests
             + "No\n"
             + "Yes\n"
             + "Sometimes");
-        _server.ReloadQuestions();
         _server.NewRandomEntry();
 
         var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
@@ -265,7 +262,6 @@ public class ServerTests
         File.WriteAllText(QUESTION_FILE, "Userquestion?\n"
             + ":u\n"
             + "Nobody\n");
-        _server.ReloadQuestions();
         _server.NewRandomEntry();
 
         var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
@@ -296,14 +292,12 @@ public class ServerTests
             + "Picard\n"
             + "Susane\n"
             + "Your mother");
-        _server.ReloadQuestions();
         _server.NewRandomEntry();
 
-        // Replace current question, move first question into general entry storage
-        File.WriteAllText(QUESTION_FILE, "Test\n"
+        // Add new question, move first question into general entry storage
+        File.AppendAllText(QUESTION_FILE, "Test\n"
             + "test1\n"
             + "test2\n");
-        _server.ReloadQuestions();
 
         var response = await _client.GetAsync("entry", TestContext.CancellationToken);
         var responseText = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
@@ -343,7 +337,6 @@ public class ServerTests
             + "Q4\n"
             + "Q4V1\n"
             + "Q4V2");
-        _server.ReloadQuestions();
         _server.NewRandomEntry();
         _server.NewRandomEntry();
         _server.NewRandomEntry();
