@@ -89,6 +89,16 @@ public class Server
                 response.OutputStream.Write(Encoding.UTF8.GetBytes(responseString));
             }
 
+            // entry/current.GET
+            else if (request.HttpMethod == "GET"
+                && CheckLocalRequestUrl(request, "entry/current")
+                && authUser != null
+                && _entryStorage.TryGetLastJson(out var entryJson))
+            {
+                response.StatusCode = (int) HttpStatusCode.OK;
+                response.OutputStream.Write(Encoding.UTF8.GetBytes(entryJson));
+            }
+
             else
             {
                 response.StatusCode = (int) HttpStatusCode.NotFound;

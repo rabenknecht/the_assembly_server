@@ -25,16 +25,28 @@ public class EntryStorage
     }
 
 
-    public string GetLastJson()
+    public string? GetLastJson()
     {
-        return JsonSerializer.Serialize(GetLast());
+        var last = GetLast();
+        if (last == null) return null;
+        return JsonSerializer.Serialize(last);
     }
 
 
-    public EntryRecord GetLast()
+    public bool TryGetLastJson(out string result)
     {
-        return GetSaved()[^1];
+        result = GetLastJson()!;
+        return result != null;
     }
+
+
+    public EntryRecord? GetLast()
+    {
+        return GetSaved().GetLastOr(null);
+    }
+
+
+    public int EntryCount => GetSaved().Length;
 
 
     public void Clear()

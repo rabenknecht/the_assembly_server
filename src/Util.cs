@@ -12,6 +12,13 @@ public static class Util
     }
 
 
+    public static T GetLastOr<T>(this T[] array, T or)
+    {
+        if (array.Length == 0) return or;
+        return array[^1];
+    }
+
+
     public static T[] SubArray<T>(this T[] array, int startInclusive, int length)
     {
         var result = new T[length];

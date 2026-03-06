@@ -130,6 +130,8 @@ internal class QuestionStorage
         /// <summary>Passed Stream expected to be disposed externally.</summary>
         private void LoadQuestions(FileStream readStream)
         {
+            // TODO: Rewrite
+
             // Skip over all linebreaks, they break implementation below
             // They also allow questions to be separated by 2 or more linebreaks!
             int b;
@@ -138,7 +140,7 @@ internal class QuestionStorage
             int prevByte = readStream.ReadByte();
             if (prevByte == -1)
             {
-                _fileEndExclusive = readStream.Position - 1;
+                _fileEndExclusive = readStream.Position;
                 return;
             }
 
@@ -150,15 +152,15 @@ internal class QuestionStorage
             {
                 if (curByte == -1)
                 {
-                    endExclusive = readStream.Position - 1;
-                    // Setting _fileEndExclusive redundant: next iteration will update it
+                    endExclusive = readStream.Position;
+                    _fileEndExclusive = endExclusive;
                     break;
                 }
 
                 if (curByte == '\n' && prevByte == '\n')
                 {
                     endExclusive = readStream.Position - 2;
-                    // Setting _fileEndExclusive redundant: next iteration will update it
+                    _fileEndExclusive = endExclusive;
                     break;
                 }
 
@@ -171,7 +173,10 @@ internal class QuestionStorage
             else Console.WriteLine("Detected a question that is longer than the buffer to read it. Ignoring it. "
                 + "Hit Rabenknecht so they actually include metadata for the question in question"); // TODO
 
-            LoadQuestions(readStream);
+            if (curByte != -1)
+            {
+                LoadQuestions(readStream);
+            }
         }
 
 
