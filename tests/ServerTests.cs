@@ -298,12 +298,17 @@ public class ServerTests
         File.AppendAllText(QUESTION_FILE, "Test\n"
             + "test1\n"
             + "test2\n");
+        _server.NewRandomEntry();
 
         var response = await _client.GetAsync("entry", TestContext.CancellationToken);
         var responseText = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
-        var actualEntry = JsonSerializer.Deserialize<EntryRecord>(responseText);
+        var actualEntries = JsonSerializer.Deserialize<EntryRecord[]>(responseText);
 
         Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        Assert.IsNotNull(actualEntries);
+        Assert.HasCount(1, actualEntries);
+
+        var actualEntry = actualEntries[0];
         Assert.IsNotNull(actualEntry);
         Assert.IsNotNull(actualEntry.voteOptions);
         CollectionAssert.AllItemsAreNotNull(actualEntry.voteOptions);
