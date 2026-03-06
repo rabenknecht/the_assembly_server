@@ -43,7 +43,6 @@ public class ServerTests
     {
         File.WriteAllText(QUESTION_FILE, string.Empty);
         _server.ClearStorage();
-        _server.ReloadQuestions();
         _client.DefaultRequestHeaders.Authorization = null;
     }
 
@@ -323,8 +322,7 @@ public class ServerTests
             + "Your mother");
         _server.NewRandomEntry();
 
-        // Add new question, move first question into general entry storage
-        File.AppendAllText(QUESTION_FILE, "Test\n"
+        File.AppendAllText(QUESTION_FILE, "\n\nTest\n"
             + "test1\n"
             + "test2\n");
         _server.NewRandomEntry();

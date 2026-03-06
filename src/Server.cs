@@ -135,16 +135,7 @@ public class Server
     {
         _passStorage.Clear();
         _entryStorage.Clear();
-    }
-
-
-    /// <summary>
-    /// Should be called when questions have been moved or removed from the questionFiles.
-    /// Also clears the usedQuestionsFile.
-    /// </summary>
-    public void ReloadQuestions()
-    {
-        _questionStorage = new QuestionStorage(_questionStorage.FilePaths);
+        // TODO: _questionGetter.Clear()!
         File.WriteAllBytes(_questionGetter.FilePath, []);
         _questionGetter = new UniqueQuestionGetter(_questionStorage, _questionGetter.FilePath);
     }

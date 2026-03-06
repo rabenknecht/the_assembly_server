@@ -46,34 +46,6 @@ internal class QuestionStorage
     }
 
 
-    /// <returns>If the resulting file and questionIndex are in bounds of the QuestionStorage</returns>
-    public bool TotalToFileQuestionIndex(int totalIndex, out int fileIndex, out int questionIndex)
-    {
-        if (totalIndex < 0)
-        {
-            fileIndex = -1;
-            questionIndex = (int) totalIndex;
-            return false;
-        }
-
-        foreach (var (i, f) in _singleFiles.Index())
-        {
-            if (totalIndex >= f.QuestionCount)
-                totalIndex -= f.QuestionCount;
-            else
-            {
-                fileIndex = i;
-                questionIndex = totalIndex;
-                return true;
-            }
-        }
-
-        fileIndex = FileCount;
-        questionIndex = totalIndex;
-        return false;
-    }
-
-
     private SingleFile[] _singleFiles;
 
 
@@ -82,23 +54,16 @@ internal class QuestionStorage
         public SingleFile(string filePath)
         {
             if (!File.Exists(filePath)) throw new FileNotFoundException("Passed file does not exist");
-
             FilePath = filePath;
-            using var stream = File.OpenRead(filePath);
-            _fileEndExclusive = 0;
-            _questions = [];
         }
-
-
-        public readonly string FilePath;
 
 
         public int QuestionCount
         {
             get
             {
-                LoadQuestions(_fileEndExclusive);
-                return _questions.Count;
+                UpdateBuffers();
+                return _bufferedQuestions.Length;
             }
         }
 
@@ -107,96 +72,25 @@ internal class QuestionStorage
         {
             get
             {
-                using var stream = File.OpenRead(FilePath);
-                stream.Seek(_fileEndExclusive, SeekOrigin.Begin);
-                LoadQuestions(stream);
-
-                var (start, end) = _questions[index];
-                var length = (int) (end - start); // Guranteed to be <=_buffer.Count
-                stream.Seek(start, SeekOrigin.Begin);
-                stream.ReadExactly(_buffer, 0, length);
-                return Encoding.UTF8.GetString(_buffer, 0, length);
+                UpdateBuffers();
+                if (index < 0 || index >= _bufferedQuestions.Length) throw new IndexOutOfRangeException();
+                return _bufferedQuestions[index];
             }
         }
 
-        private void LoadQuestions(long pointerStart)
+
+        private void UpdateBuffers()
         {
-            using var stream = File.OpenRead(FilePath);
-            stream.Seek(pointerStart, SeekOrigin.Begin);
-            LoadQuestions(stream);
+            var lastWrite = File.GetLastWriteTime(FilePath);
+            if (lastWrite == _bufferedSinceLastWrite) return;
+
+            _bufferedSinceLastWrite = lastWrite;
+            _bufferedQuestions = File.ReadAllText(FilePath).TrimEnd('\n').Split("\n\n");
         }
 
 
-        /// <summary>Passed Stream expected to be disposed externally.</summary>
-        private void LoadQuestions(FileStream readStream)
-        {
-            // TODO: Rewrite
-
-            // Skip over all linebreaks, they break implementation below
-            // They also allow questions to be separated by 2 or more linebreaks!
-            while (readStream.ReadByte() == '\n') ;
-
-            int prevByte = readStream.ReadByte();
-            if (prevByte == -1)
-            {
-                _fileEndExclusive = readStream.Position;
-                return;
-            }
-
-            int curByte = readStream.ReadByte();
-            long startInclusive = readStream.Position - 3;
-
-            while (true)
-            {
-                // Edgecase: Editor forgot the last linebreak
-                if (prevByte == '\n' && curByte == -1)
-                {
-                    long endExclusive = readStream.Position - 1;
-                    _fileEndExclusive = readStream.Position;
-                    SaveQuestion(startInclusive, endExclusive);
-                    break;
-                }
-
-                if (curByte == -1)
-                {
-                    long endExclusive = readStream.Position;
-                    _fileEndExclusive = readStream.Position;
-                    SaveQuestion(startInclusive, endExclusive);
-                    break;
-                }
-
-                if (curByte == '\n' && prevByte == '\n')
-                {
-                    long endExclusive = readStream.Position - 2;
-                    _fileEndExclusive = readStream.Position;
-                    SaveQuestion(startInclusive, endExclusive);
-                    LoadQuestions(readStream);
-                    break;
-                }
-
-                prevByte = curByte;
-                curByte = readStream.ReadByte();
-            }
-
-            return;
-            void SaveQuestion(long startInclusive, long endExclusive)
-            {
-                // We just ignore questions that are too long for the buffer. Who the fuck creates a 1024 symbol long question!?
-                if ((endExclusive - startInclusive) <= _buffer.Length)
-                {
-                    _questions.Add((startInclusive, endExclusive));
-                }
-                else
-                {
-                    Console.WriteLine("Detected a question that is longer than the buffer to read it. Ignoring it. "
-                    + "Hit Rabenknecht so they actually include metadata for the question in question"); // TODO
-                }
-            }
-        }
-
-
-        private long _fileEndExclusive;
-        private List<(long startInclusive, long endExclusive)> _questions;
-        private static byte[] _buffer = new byte[1024];
+        public readonly string FilePath;
+        private DateTime? _bufferedSinceLastWrite;
+        private string[] _bufferedQuestions = null!;
     }
 }
