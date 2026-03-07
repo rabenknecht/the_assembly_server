@@ -172,7 +172,6 @@ public class Server
         (
             split[0],
             DateTimeOffset.Now,
-            endsWhen ?? DateTimeOffset.MaxValue,
             split.Skip(1)
                 .SelectMany(s => s.Trim() == ":u" ? _passStorage.EnumerateUsers : [s])
                 .Select(v => new VoteOptionRecord(v, []))
@@ -220,11 +219,9 @@ public class Server
     {
         foreach (var voteOption in inEntry.voteOptions!)
         {
-            var authUserVote = voteOption.votedBy.IndexOf(ofUser);
-            if (authUserVote != -1)
-            {
-                voteOption.votedBy = voteOption.votedBy!.Remove(authUserVote);
-            }
+            voteOption.votedBy = voteOption.votedBy!
+                .Where(s => s != ofUser)
+                .ToArray();
         }
     }
 
