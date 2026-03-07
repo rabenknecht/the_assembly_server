@@ -150,15 +150,13 @@ public class Server
 
 
     /// <summary>
-    /// Clears all stored data.
+    /// Clears all stored data in the server directory.
     /// </summary>
     public void ClearStorage()
     {
         _passStorage.Clear();
         _entryStorage.Clear();
-        // TODO: _questionGetter.Clear()!
-        File.WriteAllBytes(_questionGetter.FilePath, []);
-        _questionGetter = new UniqueQuestionGetter(_questionStorage, _questionGetter.FilePath);
+        _questionGetter.Clear();
     }
 
 
