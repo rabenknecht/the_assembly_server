@@ -90,7 +90,7 @@ internal class QuestionStorage
                 .Select(s => s.Trim(' ', '\t'))
                 .Aggregate(new StringBuilder(), (l, r) => l.AppendLine(r))
                 .ToString();
-            _bufferedQuestions = formattedQuestions.TrimEnd('\n').Split("\n\n");
+            _bufferedQuestions = formattedQuestions.Trim('\n').Split("\n\n");
         }
 
 

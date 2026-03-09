@@ -83,7 +83,18 @@ public static class Shell
             WriteLine($"Some arguments could not be parsed: {string.Join(", ", argList.Select(s => $"\"{s}\""))}");
         }
 
-        server.RunForever();
+        while (true)
+        {
+            try
+            {
+                server.RunForever();
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine("Exception thrown while running server: " + e);
+                Console.WriteLine("Restarting server...");
+            }
+        }
     }
 
 

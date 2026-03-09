@@ -69,6 +69,13 @@ internal class UniqueQuestionGetter
     }
 
 
+    public void Clear()
+    {
+        File.WriteAllBytes(FilePath, []);
+        foreach (var l in _alreadyUsed) l.Clear();
+    }
+
+
     private IEnumerable<int> AlreadyUsedFiles()
     {
         return Enumerable.Range(0, _alreadyUsed.Length).Where(i => _alreadyUsed[i].Count == _storage.QuestionCount(i));
