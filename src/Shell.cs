@@ -58,7 +58,12 @@ public static class Shell
         }
 
         var server = new Server(urls, serverDir, questionFiles);
-        
+
+        if (questionFiles.Count != 0)
+        {
+            WriteLine($"Loaded a total of {server.QuestionCount} questions");
+        }
+
         if (ExtractOptionNoArgs(argList, "-c"))
         {
             server.ClearStorage();

@@ -184,6 +184,9 @@ public class Server
     }
 
 
+    public int QuestionCount => _questionStorage.TotalQuestionCount;
+
+
     /// <summary>
     /// Returns the authenticated user of the request.
     /// </summary>
