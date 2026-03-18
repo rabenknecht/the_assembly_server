@@ -76,7 +76,7 @@ public class Server
                 && requestContent.TryJsonDeserialize<JoinRecord>(out var joinRecord)
                 && _passStorage.CanBeNew(joinRecord.user))
             {
-                _passStorage.Update(joinRecord.user, joinRecord.password);
+                TryAddUser(joinRecord.user, joinRecord.password);
                 response.StatusCode = (int) HttpStatusCode.OK;
             }
 
@@ -181,6 +181,12 @@ public class Server
 
         _entryStorage.AddLast(entry);
         return true;
+    }
+
+
+    public bool TryAddUser(string? user, string? pass)
+    {
+        return _passStorage.Update(user, pass);
     }
 
 

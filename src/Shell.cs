@@ -32,6 +32,9 @@ public static class Shell
             WriteLine();
             WriteLine($"-c                          Clears the servers persistent storage.");
             WriteLine();
+            WriteLine($"--users [user1] [user2] ... Creates new user accounts with no user passwords.");
+            WriteLine($"                            Optional.");
+            WriteLine();
             WriteLine($"-ne                         Immediately loads a new random entry from the passed questions.");
             return;
         }
@@ -70,6 +73,14 @@ public static class Shell
             WriteLine("Server persistent storage cleared.");
         }
 
+        foreach (var user in ExtractOptionMultiArg(argList, "--users", "-") ?? [])
+        {
+            if (!server.TryAddUser(user, ""))
+            {
+                WriteLine($"Could not add user {user}. Ignoring them instead");
+            }
+        }
+
         if (ExtractOptionNoArgs(argList, "-ne"))
         {
             if (server.NewRandomEntry())
@@ -96,8 +107,8 @@ public static class Shell
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine("Exception thrown while running server: " + e);
-                Console.WriteLine("Restarting server...");
+                Error.WriteLine("Exception thrown while running server: " + e);
+                WriteLine("Restarting server...");
             }
         }
     }
