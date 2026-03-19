@@ -30,6 +30,9 @@ public static class Shell
             WriteLine($"                            The server loads data from where when restarted.");
             WriteLine($"                            Defaults to {DEFAULT_SERVERDIR} when no directory is passed, or when omitted.");
             WriteLine();
+            WriteLine($"--log                       Logs any requests to and the responses from the server.");
+            WriteLine($"                            Never logs IP-Adresses of request senders.");
+            WriteLine();
             WriteLine($"-c                          Clears the servers persistent storage.");
             WriteLine();
             WriteLine($"--users [user1] [user2] ... Creates new user accounts with no user passwords.");
@@ -60,7 +63,7 @@ public static class Shell
             WriteLine($"No directory for the server has been passed. Using {DEFAULT_SERVERDIR} instead.");
         }
 
-        var server = new Server(urls, serverDir, questionFiles);
+        var server = new Server(urls, serverDir, questionFiles, ExtractOptionNoArgs(argList, "--log"));
 
         if (questionFiles.Count != 0)
         {

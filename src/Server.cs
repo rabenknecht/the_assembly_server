@@ -10,7 +10,7 @@ public class Server
     public Server(string url, string fileStorage, params string[] questionFiles) : this([url], fileStorage, questionFiles) {}
 
 
-    public Server(IEnumerable<string> urls, string fileStorage, IEnumerable<string> questionFiles)
+    public Server(IEnumerable<string> urls, string fileStorage, IEnumerable<string> questionFiles, bool shouldLog = false)
     {
         var passDir = Path.Combine(fileStorage, "passwords");
         var usedQuestionsFile = Path.Combine(fileStorage, "usedQuestions");
@@ -25,6 +25,7 @@ public class Server
         // if (!File.Exists(entryFile)) File.Create(entryFile).Close();
 
 
+        _shouldLog = shouldLog;
         _passStorage = new PassStorage(passDir);
         _questionStorage = new QuestionStorage(questionFiles);
         _questionGetter = new UniqueQuestionGetter(_questionStorage, usedQuestionsFile);
@@ -69,6 +70,13 @@ public class Server
             var response = context.Response;
             var authUser = GetAuthenticatedUser(request);
             var requestContent = ExtractRequestContent(request);
+            string responseContent = "";
+
+            if (_shouldLog)
+            {
+                Console.WriteLine($"[{DateTime.Now}] [IN] url:{request.Url?.AbsoluteUri} method:{request.HttpMethod} "
+                    + $"authUser:{authUser} requestContent:{requestContent?.Replace("\n", "\\n")}");
+            }
 
             // users.POST
             if (request.HttpMethod == "POST"
@@ -85,10 +93,8 @@ public class Server
                 && request.HttpMethod == "GET"
                 && CheckLocalRequestUrl(request, "users"))
             {
-                var responseString = string.Join('\n', _passStorage.EnumerateUsers);
-
+                responseContent += string.Join('\n', _passStorage.EnumerateUsers);
                 response.StatusCode = (int) HttpStatusCode.OK;
-                response.OutputStream.Write(Encoding.UTF8.GetBytes(responseString));
             }
 
             // entry/current.GET
@@ -98,7 +104,7 @@ public class Server
                 && _entryStorage.TryGetLastJson(out var entryJson))
             {
                 response.StatusCode = (int) HttpStatusCode.OK;
-                response.OutputStream.Write(Encoding.UTF8.GetBytes(entryJson));
+                responseContent += entryJson;
             }
 
             // entry.GET
@@ -106,11 +112,11 @@ public class Server
                 && request.HttpMethod == "GET"
                 && CheckLocalRequestUrl(request, "entry"))
             {
-                var entriesJson = _entryStorage.GetAllExceptLastJson();
                 response.StatusCode = (int) HttpStatusCode.OK;
-                response.OutputStream.Write(Encoding.UTF8.GetBytes(entriesJson));
+                responseContent += _entryStorage.GetAllExceptLastJson();
             }
 
+            // entry.vote.POST
             else if (authUser != null
                 && request.HttpMethod == "POST"
                 && CheckLocalRequestUrl(request, "entry/vote")
@@ -136,6 +142,13 @@ public class Server
                 response.StatusCode = (int) HttpStatusCode.NotFound;
             }
 
+            if (_shouldLog)
+            {
+                Console.WriteLine($"[{DateTime.Now}] [OUT] statusCode:{response.StatusCode} "
+                    + $"responseContent:{responseContent.Replace("\n", "\\n")}");
+            }
+
+            response.OutputStream.Write(Encoding.UTF8.GetBytes(responseContent));
             response.Close();
         }
     }
@@ -236,6 +249,7 @@ public class Server
     }
 
 
+    private readonly bool _shouldLog;
     private readonly HttpListener _listener;
     private readonly IReadOnlyCollection<string> _urls;
     private readonly PassStorage _passStorage;
