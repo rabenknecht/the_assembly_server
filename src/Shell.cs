@@ -6,7 +6,7 @@ public static class Shell
 {
     private const string DEFAULT_URL = "http://localhost:2023/";
     private const string DEFAULT_SERVERDIR = "serverDirectory";
-
+    private const string OPTION_PREFIX = "-";
 
     public static void Main(string[] args)
     {
@@ -42,21 +42,21 @@ public static class Shell
             return;
         }
 
-        var urls = ExtractOptionMultiArg(argList, "-u", "-");
+        var urls = ExtractOptionMultiArg(argList, "-u", OPTION_PREFIX);
         if (urls == null)
         {
             urls = [ DEFAULT_URL ];
             WriteLine($"No urls have been passed as argument. Using {DEFAULT_URL} instead.");
         }
 
-        var questionFiles = ExtractOptionMultiArg(argList, "-q", "-") ?? [];
+        var questionFiles = ExtractOptionMultiArg(argList, "-q", OPTION_PREFIX) ?? [];
         if (questionFiles.Count == 0)
         {
             WriteLine("No questionFiles have been passed as argument. The server will still run "
                 + "and allow joining or viewing past entries, but no new entries can be generated.");
         }
 
-        var serverDir = ExtractOptionSingleArg(argList, "-d");
+        var serverDir = ExtractOptionSingleArg(argList, "-d", OPTION_PREFIX);
         if (serverDir == null)
         {
             serverDir = DEFAULT_SERVERDIR;
@@ -76,7 +76,7 @@ public static class Shell
             WriteLine("Server persistent storage cleared.");
         }
 
-        foreach (var user in ExtractOptionMultiArg(argList, "--users", "-") ?? [])
+        foreach (var user in ExtractOptionMultiArg(argList, "--users", OPTION_PREFIX) ?? [])
         {
             if (!server.TryAddUser(user, ""))
             {
@@ -123,16 +123,23 @@ public static class Shell
     }
 
 
-    private static string? ExtractOptionSingleArg(List<string> argList, string option)
+    private static string? ExtractOptionSingleArg(List<string> argList, string option, string optionPrefix)
     {
         for (int i = 0; i < argList.Count - 1; i++)
         {
             if (argList[i] == option)
             {
-                var result = argList[i + 1];
                 argList.RemoveAt(i);
-                argList.RemoveAt(i);
-                return result;
+                var result = argList[i];
+                if (result.StartsWith(optionPrefix))
+                {
+                    return null;
+                }
+                else
+                {
+                    argList.RemoveAt(i);
+                    return result;
+                }
             }
         }
 
