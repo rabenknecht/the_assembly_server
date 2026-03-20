@@ -81,7 +81,6 @@ public static class Shell
         if (ExtractOptionNoArgs(argList, "-c"))
         {
             server.ClearStorage();
-            WriteLine("Server persistent storage cleared.");
         }
 
 
@@ -96,12 +95,7 @@ public static class Shell
 
         if (ExtractOptionNoArgs(argList, "-ne"))
         {
-            // TODO: Thin out printing. It is too noisy
-            if (server.NewRandomEntry())
-            {
-                WriteLine("New random entry loaded.");
-            }
-            else
+            if (!server.NewRandomEntry())
             {
                 WriteLine($"Could not create a new random entry. Either no question files "
                     + "have been passed, or all questions have already been picked");
