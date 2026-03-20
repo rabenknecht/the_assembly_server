@@ -174,6 +174,7 @@ public class Server
     }
 
 
+    /// <summary>Can be called in a separate thread to the server running.</summary>
     /// <param name="endsWhen">Defaults to max time.</param>
     /// <returns>False if loading a new question failed.
     /// Usually happens when we server ran out of unique question.</returns>

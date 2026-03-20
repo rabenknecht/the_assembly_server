@@ -14,6 +14,7 @@ public static class Shell
 
         if (ExtractOptionNoArgs(argList, "-h"))
         {
+            WriteLine();
             WriteLine($"All options are executed from top to bottom.");
             WriteLine($"For each option, only the first entry is executed, the rest ignored");
             WriteLine();
@@ -39,8 +40,10 @@ public static class Shell
             WriteLine($"                            Optional.");
             WriteLine();
             WriteLine($"-ne                         Immediately loads a new random entry from the passed questions.");
+            WriteLine();
             return;
         }
+
 
         var urls = ExtractOptionMultiArg(argList, "-u", OPTION_PREFIX);
         if (urls == null)
@@ -49,12 +52,14 @@ public static class Shell
             WriteLine($"No urls have been passed as argument. Using {DEFAULT_URL} instead.");
         }
 
+
         var questionFiles = ExtractOptionMultiArg(argList, "-q", OPTION_PREFIX) ?? [];
         if (questionFiles.Count == 0)
         {
             WriteLine("No questionFiles have been passed as argument. The server will still run "
                 + "and allow joining or viewing past entries, but no new entries can be generated.");
         }
+
 
         var serverDir = ExtractOptionSingleArg(argList, "-d", OPTION_PREFIX);
         if (serverDir == null)
@@ -63,18 +68,22 @@ public static class Shell
             WriteLine($"No directory for the server has been passed. Using {DEFAULT_SERVERDIR} instead.");
         }
 
+
         var server = new Server(urls, serverDir, questionFiles, ExtractOptionNoArgs(argList, "--log"));
+
 
         if (questionFiles.Count != 0)
         {
             WriteLine($"Loaded a total of {server.QuestionCount} questions");
         }
 
+
         if (ExtractOptionNoArgs(argList, "-c"))
         {
             server.ClearStorage();
             WriteLine("Server persistent storage cleared.");
         }
+
 
         foreach (var user in ExtractOptionMultiArg(argList, "--users", OPTION_PREFIX) ?? [])
         {
@@ -84,8 +93,10 @@ public static class Shell
             }
         }
 
+
         if (ExtractOptionNoArgs(argList, "-ne"))
         {
+            // TODO: Thin out printing. It is too noisy
             if (server.NewRandomEntry())
             {
                 WriteLine("New random entry loaded.");
@@ -97,11 +108,44 @@ public static class Shell
             }
         }
 
+
         if (argList.Count != 0)
         {
             WriteLine($"Some arguments could not be parsed: {string.Join(", ", argList.Select(s => $"\"{s}\""))}");
         }
 
+
+        new Thread(() => ParallelServerThread(server)).Start();
+        WriteLine("Console started.");
+        WriteLine("    Write any commands to modify the server during runtime.");
+        WriteLine("    Call \"h\" to see all available console commands");
+        while (true)
+        {
+            var input = ReadLine();
+            
+            if (input == "h")
+            {
+                WriteLine();
+                WriteLine($"h                           Prints this text.");
+                WriteLine();
+                WriteLine($"ne                          Immediately loads a new random entry from the questions");
+                WriteLine($"                            the server has access to.");
+                WriteLine();
+            }
+            else if (input == "ne")
+            {
+                server.NewRandomEntry();
+            }
+            else
+            {
+                WriteLine("Unknown command. Use \"h\" to see list of available commands");
+            }
+        }
+    }
+
+
+    private static void ParallelServerThread(Server server)
+    {
         while (true)
         {
             try
