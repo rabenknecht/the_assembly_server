@@ -1,3 +1,8 @@
+using System.Security.Cryptography;
+using System.Text;
+using Konscious.Security.Cryptography;
+using TheAssembly.Core;
+
 namespace TheAssembly.Server;
 
 /// <summary>
@@ -38,21 +43,26 @@ internal class PassStorage
     {
         if (!IsUserLegal(user)) return false;
 
-        // TODO: DO NOT SAVE PASSES IN PLAINTEXT!!!!!!
-        File.WriteAllText(PassFileFor(user!), pass);
+        var salt = RandomNumberGenerator.GetBytes(SALT_LENGTH);
+        var hash = HashPass(pass ?? "", salt, user!);
+        File.WriteAllBytes(PassFileFor(user!), salt.Concat(hash));
 
         return true;
     }
 
 
     /// <returns>False if the password is incorrect, or no entry exists</returns>
-    public bool CorrectOrNoPass(string? user, string? pass)
+    public bool Correct(string? user, string? pass)
     {
         if (!IsUserLegal(user)) return false;
         var passFile = PassFileFor(user!);
         if (!File.Exists(passFile)) return false;
-        // TODO: DO NOT SAVE PASSES IN PLAINTEXT!!!!!!
-        return File.ReadAllText(passFile) == pass;
+
+        var stored = File.ReadAllBytes(PassFileFor(user!));
+        var salt = stored.SubArray(0, SALT_LENGTH);
+        var expectedHash = stored.SubArray(SALT_LENGTH, stored.Length - SALT_LENGTH);
+        var actualHash = HashPass(pass ?? "", salt, user!);
+        return Enumerable.SequenceEqual(expectedHash, actualHash);
     }
 
 
@@ -80,5 +90,23 @@ internal class PassStorage
     private string PassFileFor(string user) => Path.Combine(_baseDir, user);
 
 
+    private byte[] HashPass(string pass, byte[] salt, string user)
+    {
+        // Argon2 doesn't like empty passes, so we add a symbol to gurantee non empty passes
+        var argon2 = new Argon2d(Encoding.UTF8.GetBytes(pass + "x"));
+
+        // TODO: Set params outside program!
+        argon2.DegreeOfParallelism = 16;
+        argon2.MemorySize = 8192;
+        argon2.Iterations = 40;
+        argon2.Salt = salt;
+        argon2.AssociatedData = Encoding.UTF8.GetBytes(user);
+
+        return argon2.GetBytes(32);
+    }
+
+
     private readonly string _baseDir;
+
+    private const int SALT_LENGTH = 16;
 }

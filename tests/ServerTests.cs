@@ -138,7 +138,24 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task UsersGET_Authenticated_ReturnsUsers()
+    public async Task UsersGET_Authenticated_ReturnsSingleUser()
+    {
+        await UserPost(new JoinRecord("-test3", "hello"));
+
+        // The authentication header appears to get lost in transmission?
+        _client.AddBasicAuthHeader("-test3", "hello");
+        var response = await _client.GetAsync("users", TestContext.CancellationToken);
+        var actualUnsplit = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
+
+        Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        CollectionAssert.AreEquivalent(
+            new string[] { "-test3" },
+            actualUnsplit.Split('\n'));
+    }
+
+
+    [TestMethod]
+    public async Task UsersGET_Authenticated_ReturnsMultipleUsers()
     {
         await UserPost(new JoinRecord("test1", ""));
         await UserPost(new JoinRecord("_test2", ""));

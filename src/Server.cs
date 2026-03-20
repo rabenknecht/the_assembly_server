@@ -215,7 +215,7 @@ public class Server
         var authHeader = request.Headers[nameof(HttpRequestHeader.Authorization)];
         if (authHeader == null) return null;
         if (!authHeader.TryBasicAuthHeaderToUserPass(out var user, out var pass)) return null;
-        if (!_passStorage.CorrectOrNoPass(user, pass)) return null;
+        if (!_passStorage.Correct(user, pass)) return null;
         return user;
     }
 
