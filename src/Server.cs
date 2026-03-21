@@ -175,10 +175,9 @@ public class Server
 
 
     /// <summary>Can be called in a separate thread to the server running.</summary>
-    /// <param name="endsWhen">Defaults to max time.</param>
     /// <returns>False if loading a new question failed.
     /// Usually happens when we server ran out of unique question.</returns>
-    public bool NewRandomEntry(DateTimeOffset? endsWhen = null)
+    public bool NewRandomEntry()
     {
         if (!_questionGetter.TryGetRandom(out var question)) return false;
 
