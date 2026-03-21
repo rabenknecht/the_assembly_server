@@ -112,27 +112,29 @@ public static class Shell
         new Thread(() => ParallelServerThread(server)).Start();
         WriteLine("Console started.");
         WriteLine("    Write any commands to modify the server during runtime.");
-        WriteLine("    Call \"h\" to see all available console commands");
+        WriteLine("    Call \"help\" to see all available console commands");
         while (true)
         {
             var input = ReadLine();
             
-            if (input == "h")
+            if (input == "help")
             {
-                WriteLine();
-                WriteLine($"h                           Prints this text.");
-                WriteLine();
-                WriteLine($"ne                          Immediately loads a new random entry from the questions");
-                WriteLine($"                            the server has access to.");
-                WriteLine();
+                WriteLine($"    help                        Prints this text.");
+                WriteLine($"    newentry                    Immediately loads a new random entry from the questions the server has access to.");
+                WriteLine($"    daily newentry [hh:mm:ss]   Loads a new random entry from the questions the server has access at [hh:mm:ss] local time every day.");
             }
-            else if (input == "ne")
+            else if (input == "newentry")
             {
                 server.NewRandomEntry();
             }
+            else if (input != null && input.StartsWith("daily newentry ")
+                && TimeOnly.TryParseExact(input[15..], "HH:mm:ss", out var time))
+            {
+                new Thread(() => DailyNewEntryThread(server, time)).Start();
+            }
             else
             {
-                WriteLine("Unknown command. Use \"h\" to see list of available commands");
+                WriteLine("Unknown command. Use \"help\" to see list of available commands");
             }
         }
     }
@@ -151,6 +153,18 @@ public static class Shell
                 Error.WriteLine("Exception thrown while running server: " + e);
                 WriteLine("Restarting server...");
             }
+        }
+    }
+
+
+    private static void DailyNewEntryThread(Server server, TimeOnly time)
+    {
+        Thread.Sleep(time - TimeOnly.FromDateTime(DateTime.Now));
+
+        while (true)
+        {
+            server.NewRandomEntry();
+            Thread.Sleep(new TimeSpan(24, 0, 0));
         }
     }
 
