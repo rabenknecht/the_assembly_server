@@ -197,6 +197,39 @@ public class Server
     }
 
 
+    public void DailyNewRandomEntry(TimeOnly whenLocal)
+    {
+        _dailyNewEntryTimes.Add(whenLocal);
+        _dailyNewEntryRunningThreads.Add(new Thread(() =>
+        {
+            while (true)
+            {
+                Thread.Sleep(whenLocal - TimeOnly.FromDateTime(DateTime.Now));
+                NewRandomEntry();
+            }
+        }));
+        _dailyNewEntryRunningThreads[^1].Start();
+    }
+
+
+    public IEnumerable<TimeOnly> IterDailyNewRandomEntries()
+    {
+        return _dailyNewEntryTimes;
+    }
+
+
+    public void StopAllDailyNewRandomEntry()
+    {
+        foreach (var t in _dailyNewEntryRunningThreads)
+        {
+            // TODO: Read now thread interruption acts
+            t.Interrupt();
+        }
+        _dailyNewEntryRunningThreads.Clear();
+        _dailyNewEntryTimes.Clear();
+    }
+
+
     public bool TryAddUser(string? user, string? pass)
     {
         return _passStorage.Update(user, pass);
@@ -252,8 +285,12 @@ public class Server
     private readonly bool _shouldLog;
     private readonly HttpListener _listener;
     private readonly IReadOnlyCollection<string> _urls;
+
     private readonly PassStorage _passStorage;
-    private QuestionStorage _questionStorage;
-    private UniqueQuestionGetter _questionGetter;
-    private EntryStorage _entryStorage;
+    private readonly EntryStorage _entryStorage;
+    private readonly QuestionStorage _questionStorage;
+    private readonly UniqueQuestionGetter _questionGetter;
+
+    private readonly List<Thread> _dailyNewEntryRunningThreads = new();
+    private readonly List<TimeOnly> _dailyNewEntryTimes = new();
 }
