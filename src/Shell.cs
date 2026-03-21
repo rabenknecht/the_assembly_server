@@ -37,6 +37,7 @@ public static class Shell
             WriteLine($"-c                          Clears the servers persistent storage.");
             WriteLine();
             WriteLine($"--users [user1] [user2] ... Creates new user accounts with no user passwords.");
+            WriteLine($"                            Logs when user account creation failed. Usually happens when users are already registered, or the username is illegal.");
             WriteLine($"                            Optional.");
             WriteLine();
             WriteLine($"-ne                         Immediately loads a new random entry from the passed questions.");
@@ -109,46 +110,16 @@ public static class Shell
         }
 
 
-        new Thread(() => 
-        {
-            while (true)
-            {
-                try
-                {
-                    server.RunForever();
-                }
-                catch (Exception e)
-                {
-                    Error.WriteLine("Exception thrown while running server: " + e);
-                    WriteLine("Restarting server...");
-                }
-            }
-        }).Start();
-        WriteLine("Console started.");
-        WriteLine("    Write any commands to modify the server during runtime.");
-        WriteLine("    Call \"help\" to see all available console commands");
         while (true)
         {
-            var input = ReadLine();
-            
-            if (input == "help")
+            try
             {
-                WriteLine($"    help                        Prints this text.");
-                WriteLine($"    newentry                    Immediately loads a new random entry from the questions the server has access to.");
-                WriteLine($"    daily newentry [hh:mm:ss]   Loads a new random entry from the questions the server has access at [hh:mm:ss] local time every day.");
+                server.RunForever();
             }
-            else if (input == "newentry")
+            catch (Exception e)
             {
-                server.NewRandomEntry();
-            }
-            else if (input != null && input.StartsWith("daily newentry ")
-                && TimeOnly.TryParseExact(input[15..], "HH:mm:ss", out var time))
-            {
-                server.DailyNewRandomEntry(time);
-            }
-            else
-            {
-                WriteLine("Unknown command. Use \"help\" to see list of available commands");
+                Error.WriteLine("Exception thrown while running server: " + e);
+                WriteLine("Restarting server...");
             }
         }
     }
