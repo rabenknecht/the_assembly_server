@@ -25,7 +25,7 @@ public static class Shell
             WriteLine();
             WriteLine($"-q [file1] [file2] ...      Sets the files from which the server fetches questions.");
             WriteLine($"                            Each file can be used by multiple servers.");
-            WriteLine($"                            Optional.");
+            WriteLine($"                            Not passing questionFiles or ommitting this option prevents the creation of new entries.");
             WriteLine();
             WriteLine($"-d [directory]              Sets the directory in which the server saves its data for persistence.");
             WriteLine($"                            The server loads data from where when restarted.");
@@ -37,8 +37,7 @@ public static class Shell
             WriteLine($"-c                          Clears the servers persistent storage.");
             WriteLine();
             WriteLine($"--users [user1] [user2] ... Creates new user accounts with no user passwords.");
-            WriteLine($"                            Logs when user account creation failed. Usually happens when users are already registered, or the username is illegal.");
-            WriteLine($"                            Optional.");
+            WriteLine($"                            Logs when user account creation failed (user already exists, username illegal).");
             WriteLine();
             WriteLine($"-ne                         Immediately loads a new random entry from the passed questions.");
             WriteLine();
