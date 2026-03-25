@@ -18,8 +18,6 @@ namespace TheAssembly.Server;
 // All members are trimmed before use
 // More than 2 linebreaks to split questions breaks this storage.
 
-// TODO: Save the questions in a dedicated file!
-
 /// <summary>
 /// Storage used to access individual questions via indexing of multiple files and the questions they contain.
 /// <para/>
@@ -31,46 +29,95 @@ namespace TheAssembly.Server;
 /// </summary>
 public class GeneralQuestionStorage
 {
-    public GeneralQuestionStorage(IEnumerable<string> filePaths)
+    /// <param name="referenceFile">The reference file is used to persistently load and save
+    /// the references to the questionFiles loaded into this GeneralQuestionStorage in order
+    /// of their indices.</param>
+    public GeneralQuestionStorage(string referenceFile)
     {
-        _singleFiles = filePaths.Select(p => new SingleFile(p)).ToArray();
+        if (!File.Exists(referenceFile))
+        {
+            throw new ArgumentException("Passed referenceFile path does not point to a file!");
+        }
+
+        _referenceFile = referenceFile;
     }
 
 
-    public IEnumerable<string> FilePaths => _singleFiles.Select(f => f.FilePath);
+    public IEnumerable<string> FilePaths => GetSingleFiles().Select(f => f.FilePath);
 
 
-    public int FileCount => _singleFiles.Length;
+    public int FileCount => GetSingleFiles().Count;
 
 
     public int QuestionCount(int fileIndex)
     {
-        if (fileIndex < 0 || fileIndex >= FileCount) throw new IndexOutOfRangeException();
-        return _singleFiles[fileIndex].QuestionCount;
+        if (fileIndex < 0 || fileIndex >= FileCount)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
+        return GetSingleFiles()[fileIndex].QuestionCount;
     }
 
 
     public int QuestionCountOr(int fileIndex, int or)
     {
-        if (fileIndex < 0 || fileIndex >= FileCount) return or;
-        return _singleFiles[fileIndex].QuestionCount;
+        if (fileIndex < 0 || fileIndex >= FileCount)
+        {
+            return or;
+        }
+
+        return GetSingleFiles()[fileIndex].QuestionCount;
     }
 
 
-    public int TotalQuestionCount => _singleFiles.Sum(f => f.QuestionCount);
+    public int TotalQuestionCount => GetSingleFiles().Sum(f => f.QuestionCount);
 
 
     public string GetQuestion(int fileIndex, int questionIndex)
     {
         if (fileIndex < 0 || fileIndex >= FileCount
             || questionIndex < 0 || questionIndex >= QuestionCount(fileIndex))
+        {
             throw new IndexOutOfRangeException();
+        }
 
-        return _singleFiles[fileIndex][questionIndex];
+        return GetSingleFiles()[fileIndex][questionIndex];
     }
 
 
-    private SingleFile[] _singleFiles;
+    public void RegisterQuestionFile(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            throw new ArgumentException("Passed filePath does not point to a file!");
+        }
+
+        File.AppendAllText(_referenceFile, $"{filePath}\n");
+    }
+
+
+    private IList<SingleFile> GetSingleFiles()
+    {
+        var newLastReferenceFileWrite = File.GetLastWriteTime(_referenceFile);
+        if (newLastReferenceFileWrite != _lastReferenceFileWrite)
+        {
+            _lastReferenceFileWrite = newLastReferenceFileWrite;
+
+            _bufferedSingleFiles = File.ReadAllText(_referenceFile)
+                .Split("\n")[..^1] // Last line will always be empty
+                .Select(f => new SingleFile(f))
+                .ToArray();
+        }
+
+        return _bufferedSingleFiles;
+    }
+
+
+    private readonly string _referenceFile;
+    // _lastRefFileWrite == null => This will immediately get updated in GetSingleFiles => Not null
+    private IList<SingleFile> _bufferedSingleFiles = null!;
+    private DateTime? _lastReferenceFileWrite;
 
 
     private class SingleFile
@@ -103,6 +150,9 @@ public class GeneralQuestionStorage
         }
 
 
+        // Buffering makes sense:
+        // Loading new Questions happens rarely => This instance gets replaced rarely
+        // Additionally, new questions will also be added rarely
         private void UpdateBuffers()
         {
             var lastWrite = File.GetLastWriteTime(FilePath);

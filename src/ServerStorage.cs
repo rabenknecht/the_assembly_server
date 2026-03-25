@@ -11,25 +11,26 @@ public class ServerStorage : IDisposable
 {
     /// <param name="directory">The directory in which to setup the ServerStorage.
     /// Can have existing files and directory from a pervious ServerStorage instance.</param>
-    /// <param name="questionFiles">The files used to fetch questions in the GeneralQuestionStorage.
-    /// See GeneralQuestionStorage.cs for more info on question files.</param>
     /// <exception cref="ArgumentException">When the file and directory structure of fileStorage is invalid</exception>
-    public ServerStorage(string directory, params string[] questionFiles)
+    public ServerStorage(string directory)
     {
         var passDir = Path.Combine(directory, "passwords");
         var usedQuestionsFile = Path.Combine(directory, "usedQuestions");
+        var questionReferenceFile = Path.Combine(directory, "questionFileRefs");
         var entryFile = Path.Combine(directory, "entries");
 
         if (File.Exists(passDir)) throw new ArgumentException("Invalid fileStorage structure");
         if (Directory.Exists(usedQuestionsFile)) throw new ArgumentException("Invalid fileStorage structure");
+        if (Directory.Exists(questionReferenceFile)) throw new ArgumentException("Invalid fileStorage structure");
 
         if (!Directory.Exists(passDir)) Directory.CreateDirectory(passDir);
         if (!File.Exists(usedQuestionsFile)) File.Create(usedQuestionsFile).Close();
+        if (!File.Exists(questionReferenceFile)) File.Create(questionReferenceFile).Close();
         // EntryStorage automatically generates its file
         // if (!File.Exists(entryFile)) File.Create(entryFile).Close();
 
         UserStorage = new UserStorage(passDir);
-        GeneralQuestionStorage = new GeneralQuestionStorage(questionFiles);
+        GeneralQuestionStorage = new GeneralQuestionStorage(questionReferenceFile);
         UniqueQuestionStorage = new UniqueQuestionStorage(GeneralQuestionStorage, usedQuestionsFile);
         EntryStorage = new EntryStorage(entryFile);
     }

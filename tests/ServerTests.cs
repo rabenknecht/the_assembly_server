@@ -34,10 +34,12 @@ public class ServerTests
         Directory.CreateDirectory(TEST_DIR); // We need the testdir for the questionfile
         File.WriteAllText(QUESTION_FILE, string.Empty);
 
-        _storage = new ServerStorage(SERVER_DIR, QUESTION_FILE);
-        _altStorage = new ServerStorage(SERVER_DIR, QUESTION_FILE);
+        _storage = new ServerStorage(SERVER_DIR);
+        _altStorage = new ServerStorage(SERVER_DIR);
         _server = new Server(Url, _storage);
         _client = new HttpClient() { BaseAddress = new Uri(Url) };
+
+        _storage.GeneralQuestionStorage.RegisterQuestionFile(QUESTION_FILE);
 
         _server.RunAsync();
     }
