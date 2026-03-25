@@ -64,9 +64,9 @@ public class Server
             if (request.HttpMethod == "POST"
                 && CheckLocalRequestUrl(request, "users")
                 && requestContent.TryJsonDeserialize<JoinRecord>(out var joinRecord)
-                && _storage.PassStorage.CanBeNew(joinRecord.user))
+                && _storage.UserStorage.CanBeNew(joinRecord.user))
             {
-                _storage.PassStorage.Update(joinRecord.user, joinRecord.password);
+                _storage.UserStorage.Update(joinRecord.user, joinRecord.password);
                 response.StatusCode = (int) HttpStatusCode.OK;
             }
 
@@ -75,7 +75,7 @@ public class Server
                 && request.HttpMethod == "GET"
                 && CheckLocalRequestUrl(request, "users"))
             {
-                responseContent += string.Join('\n', _storage.PassStorage.EnumerateUsers);
+                responseContent += string.Join('\n', _storage.UserStorage.EnumerateUsers);
                 response.StatusCode = (int) HttpStatusCode.OK;
             }
 
@@ -153,7 +153,7 @@ public class Server
         var authHeader = request.Headers[nameof(HttpRequestHeader.Authorization)];
         if (authHeader == null) return null;
         if (!authHeader.TryBasicAuthHeaderToUserPass(out var user, out var pass)) return null;
-        if (!_storage.PassStorage.Correct(user, pass)) return null;
+        if (!_storage.UserStorage.Correct(user, pass)) return null;
         return user;
     }
 

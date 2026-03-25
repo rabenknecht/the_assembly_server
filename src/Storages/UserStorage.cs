@@ -8,10 +8,10 @@ namespace TheAssembly.Server;
 /// <summary>
 /// All accessors validate beforehand if passed usernames are legal.
 /// </summary>
-public class PassStorage
+public class UserStorage
 {
     /// <param name="baseDir">Which directory can the PassStorage use to save passwords.</param>
-    public PassStorage(string baseDir)
+    public UserStorage(string baseDir)
     {
         _baseDir = baseDir ?? throw new ArgumentNullException(nameof(baseDir));
     }

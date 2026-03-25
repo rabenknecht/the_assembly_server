@@ -5,9 +5,9 @@ namespace TheAssembly.Server;
 /// <summary>
 /// THIS CLASS DOES NOT SUPPORT MULTITHREADED ACCESSING!!!!!
 /// </summary>
-public class QuestionStorage
+public class GeneralQuestionStorage
 {
-    public QuestionStorage(IEnumerable<string> filePaths)
+    public GeneralQuestionStorage(IEnumerable<string> filePaths)
     {
         _singleFiles = filePaths.Select(p => new SingleFile(p)).ToArray();
     }

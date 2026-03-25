@@ -2,11 +2,11 @@ using TheAssembly.Core;
 
 namespace TheAssembly.Server;
 
-public class UniqueQuestionGetter
+public class UniqueQuestionStorage
 {
     /// <param name="storage">From where to fetch questions.</param>
     /// <param name="filePath">The file is needed to store what questions are already used or still available.</param>
-    public UniqueQuestionGetter(QuestionStorage storage, string filePath)
+    public UniqueQuestionStorage(GeneralQuestionStorage storage, string filePath)
     {
         _storage = storage;
         FilePath = filePath;
@@ -112,7 +112,7 @@ public class UniqueQuestionGetter
     private int TotalUsedQuestions => _alreadyUsed.Sum(x => x.Count);
 
 
-    private readonly QuestionStorage _storage;
+    private readonly GeneralQuestionStorage _storage;
     // _alreadyUsed[fileIndex] yields the used questionIndices for that specified file.
     private readonly List<int>[] _alreadyUsed;
 }

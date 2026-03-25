@@ -16,17 +16,17 @@ public class ServerStorage
         // EntryStorage automatically generates its file
         // if (!File.Exists(entryFile)) File.Create(entryFile).Close();
 
-        PassStorage = new PassStorage(passDir);
-        QuestionStorage = new QuestionStorage(questionFiles);
-        QuestionGetter = new UniqueQuestionGetter(QuestionStorage, usedQuestionsFile);
+        UserStorage = new UserStorage(passDir);
+        GeneralQuestionStorage = new GeneralQuestionStorage(questionFiles);
+        UniqueQuestionStorage = new UniqueQuestionStorage(GeneralQuestionStorage, usedQuestionsFile);
         EntryStorage = new EntryStorage(entryFile);
     }
 
 
-    public readonly PassStorage PassStorage;
+    public readonly UserStorage UserStorage;
     public readonly EntryStorage EntryStorage;
-    public readonly QuestionStorage QuestionStorage;
-    public readonly UniqueQuestionGetter QuestionGetter;
+    public readonly GeneralQuestionStorage GeneralQuestionStorage;
+    public readonly UniqueQuestionStorage UniqueQuestionStorage;
 
 
     /// <summary>
@@ -34,9 +34,9 @@ public class ServerStorage
     /// </summary>
     public void ClearStorage()
     {
-        PassStorage.Clear();
+        UserStorage.Clear();
         EntryStorage.Clear();
-        QuestionGetter.Clear();
+        UniqueQuestionStorage.Clear();
     }
 
 
@@ -45,7 +45,7 @@ public class ServerStorage
     /// Usually happens when we server ran out of unique question.</returns>
     public bool NewRandomEntry()
     {
-        if (!QuestionGetter.TryGetRandom(out var question)) return false;
+        if (!UniqueQuestionStorage.TryGetRandom(out var question)) return false;
 
         var split = question.Split('\n');
         var entry = new EntryRecord
@@ -53,7 +53,7 @@ public class ServerStorage
             split[0],
             DateTimeOffset.Now,
             split.Skip(1)
-                .SelectMany(s => s.Trim() == ":u" ? PassStorage.EnumerateUsers : [s])
+                .SelectMany(s => s.Trim() == ":u" ? UserStorage.EnumerateUsers : [s])
                 .Select(v => new VoteOptionRecord(v, []))
                 .ToArray()
         );
