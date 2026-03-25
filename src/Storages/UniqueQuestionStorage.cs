@@ -2,8 +2,6 @@ using TheAssembly.Core;
 
 namespace TheAssembly.Server;
 
-// TODO: I am not reacting to modifications outside!!!!!
-
 /// <summary>
 /// Tracks which questions have already been used in a file, therefore allowing access
 /// to used or unused questions.
@@ -16,33 +14,6 @@ public class UniqueQuestionStorage
     {
         _storage = storage;
         FilePath = filePath;
-
-        var alreadyUsedFileBytes = File.ReadAllBytes(filePath);
-        if ((alreadyUsedFileBytes.Length & 0b111) != 0) // divisible by 8?
-        {
-            throw new ArgumentException("Incorrect byte count of used questions file (must be divisible through 8)", nameof(filePath));
-        }
-
-        _alreadyUsed = new List<int>[_storage.FileCount];
-        for (var i = 0; i < _alreadyUsed.Length; i++)
-        {
-            _alreadyUsed[i] = [];
-        }
-
-        foreach (var (fileIndex, questionIndex) in alreadyUsedFileBytes.BytesToInts().Group2())
-        {
-            if (fileIndex < 0 || fileIndex >= _storage.FileCount
-                || questionIndex < 0 || questionIndex >= _storage.QuestionCount(fileIndex))
-            {
-                Console.WriteLine($"The used questions file appears to indicate a used question out of bounds. Ignoring it. "
-                    + $"fileIndex:{fileIndex}/{_storage.FileCount}, "
-                    + $"questionIndex:{questionIndex}/{_storage.QuestionCountOr(fileIndex, -1)}");
-            }
-            else
-            {
-                _alreadyUsed[fileIndex].Add(questionIndex);
-            }
-        }
     }
 
 
@@ -53,6 +24,8 @@ public class UniqueQuestionStorage
     /// This usually fails when all questions are already used!</returns>
     public bool TryGetRandom(out string result)
     {
+        UpdateAlreadyUsed();
+
         if (TotalUsedQuestions == _storage.TotalQuestionCount)
         {
             result = null!;
@@ -66,7 +39,6 @@ public class UniqueQuestionStorage
         var unusedQuestion = Random.Shared.Next(_storage.QuestionCount(unusedFile) - _alreadyUsed[actualFile].Count);
         var actualQuestion = UnusedToActualQuestion(unusedQuestion, actualFile);
 
-        _alreadyUsed[actualFile].Add(actualQuestion);
         File.AppendAllBytes(FilePath, BitConverter.GetBytes(actualFile));
         File.AppendAllBytes(FilePath, BitConverter.GetBytes(actualQuestion));
 
@@ -78,7 +50,6 @@ public class UniqueQuestionStorage
     public void Clear()
     {
         File.WriteAllBytes(FilePath, []);
-        foreach (var l in _alreadyUsed) l.Clear();
     }
 
 
@@ -115,10 +86,52 @@ public class UniqueQuestionStorage
     }
 
 
+    /// <summary>
+    /// WARNING: DOES NOT UPDATE ALREADYUSED!!!!!
+    /// </summary>
     private int TotalUsedQuestions => _alreadyUsed.Sum(x => x.Count);
+
+
+    private void UpdateAlreadyUsed()
+    {
+        var newLastAlreadyUsedWrite = File.GetLastWriteTime(FilePath);
+        if (newLastAlreadyUsedWrite != _lastAlreadyUsedWrite)
+        {
+            _lastAlreadyUsedWrite = newLastAlreadyUsedWrite;
+
+            var alreadyUsedFileBytes = File.ReadAllBytes(FilePath);
+            if ((alreadyUsedFileBytes.Length & 0b111) != 0) // divisible by 8?
+            {
+                throw new InvalidOperationException("Incorrect byte count of UsedQuestionsFile! (must be divisible through 8)");
+            }
+
+            _alreadyUsed = new List<int>[_storage.FileCount];
+            for (var i = 0; i < _alreadyUsed.Length; i++)
+            {
+                _alreadyUsed[i] = [];
+            }
+
+            foreach (var (fileIndex, questionIndex) in alreadyUsedFileBytes.BytesToInts().Group2())
+            {
+                if (fileIndex < 0 || fileIndex >= _storage.FileCount
+                    || questionIndex < 0 || questionIndex >= _storage.QuestionCount(fileIndex))
+                {
+                    // TODO: Better handle this, if we ever impl question file deletion in GeneralQuestionStorage, this does enable weird bugs...
+                    Console.WriteLine($"The used questions file appears to indicate a used question out of bounds. Ignoring it. "
+                        + $"fileIndex:{fileIndex}/{_storage.FileCount}, "
+                        + $"questionIndex:{questionIndex}/{_storage.QuestionCountOr(fileIndex, -1)}");
+                }
+                else
+                {
+                    _alreadyUsed[fileIndex].Add(questionIndex);
+                }
+            }
+        }
+    }
 
 
     private readonly GeneralQuestionStorage _storage;
     // _alreadyUsed[fileIndex] yields the used questionIndices for that specified file.
-    private readonly List<int>[] _alreadyUsed;
+    private List<int>[] _alreadyUsed = [];
+    private DateTime? _lastAlreadyUsedWrite;
 }

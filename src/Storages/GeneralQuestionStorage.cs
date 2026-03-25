@@ -18,7 +18,7 @@ namespace TheAssembly.Server;
 // All members are trimmed before use
 // More than 2 linebreaks to split questions breaks this storage.
 
-
+// TODO: Save the questions in a dedicated file!
 
 /// <summary>
 /// Storage used to access individual questions via indexing of multiple files and the questions they contain.
