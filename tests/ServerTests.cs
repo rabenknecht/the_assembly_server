@@ -16,6 +16,7 @@ public class ServerTests
     // Always non null as TestInitialize is always executed before any test
     private static HttpClient _client = null!;
     private static ServerStorage _storage = null!;
+    private static ServerStorage _altStorage = null!;
     private static Server _server = null!;
 
     private const string TEST_DIR = "/tmp/the_assembly_testing/servertests";
@@ -34,6 +35,7 @@ public class ServerTests
         File.WriteAllText(QUESTION_FILE, string.Empty);
 
         _storage = new ServerStorage(SERVER_DIR, QUESTION_FILE);
+        _altStorage = new ServerStorage(SERVER_DIR, QUESTION_FILE);
         _server = new Server(Url, _storage);
         _client = new HttpClient() { BaseAddress = new Uri(Url) };
 
@@ -221,6 +223,57 @@ public class ServerTests
         _storage.NewRandomEntry();
         _storage.NewRandomEntry();
         _storage.NewRandomEntry();
+        _storage.NewRandomEntry();
+        Assert.IsFalse(_storage.NewRandomEntry());
+    }
+
+
+    [TestMethod]
+    public async Task NewRandomQuestion_WhenQuestionsAreAvailable_AltStorageMixed_ReturnsTrue()
+    {
+        File.WriteAllText(QUESTION_FILE, "Q1\n"
+            + "Q1V1\n"
+            + "Q1V2\n"
+            + "\n"
+            + "Q2\n"
+            + "Q2V1\n"
+            + "Q2V2\n"
+            + "\n"
+            + "Q3\n"
+            + "Q3V1\n"
+            + "Q3V2\n"
+            + "\n"
+            + "Q4\n"
+            + "Q4V1\n"
+            + "Q4V2");
+        Assert.IsTrue(_storage.NewRandomEntry());
+        Assert.IsTrue(_altStorage.NewRandomEntry());
+        Assert.IsTrue(_altStorage.NewRandomEntry());
+        Assert.IsTrue(_storage.NewRandomEntry());
+    }
+
+
+    [TestMethod]
+    public async Task NewRandomQuestion_NoQuestionsLeft_AltStorageMixed_ReturnsFalse()
+    {
+        File.WriteAllText(QUESTION_FILE, "Q1\n"
+            + "Q1V1\n"
+            + "Q1V2\n"
+            + "\n"
+            + "Q2\n"
+            + "Q2V1\n"
+            + "Q2V2\n"
+            + "\n"
+            + "Q3\n"
+            + "Q3V1\n"
+            + "Q3V2\n"
+            + "\n"
+            + "Q4\n"
+            + "Q4V1\n"
+            + "Q4V2");
+        _storage.NewRandomEntry();
+        _altStorage.NewRandomEntry();
+        _altStorage.NewRandomEntry();
         _storage.NewRandomEntry();
         Assert.IsFalse(_storage.NewRandomEntry());
     }
