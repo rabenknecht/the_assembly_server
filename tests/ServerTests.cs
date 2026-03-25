@@ -53,14 +53,14 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task UsersPOST_SingleUser_OK()
+    public async Task PostingSingleUser()
     {
         var response = await UserPost(new JoinRecord("_1test", "ö12-*#"));
         Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
     }
 
     [TestMethod]
-    public async Task UsersPOST_SecondNewUser_OK()
+    public async Task PostingSecondUniqueUser()
     {
         await UserPost(new JoinRecord("_balls123", "shat"));
         var response = await UserPost(new JoinRecord("ilawte", ""));
@@ -69,7 +69,7 @@ public class ServerTests
     }
 
     [TestMethod]
-    public async Task UsersPOST_ExistingUser_NotOK()
+    public async Task PostingSecondSameUser()
     {
         // TODO: Check if password is unchanged...
         await UserPost(new JoinRecord("1", "jidw-w.a-,"));
@@ -79,7 +79,7 @@ public class ServerTests
     }
 
     [TestMethod]
-    public async Task UsersPOST_OverrideOldEntry_OldPasswordOK()
+    public async Task PostingSecondSameUserAcceptsOldPass()
     {
         await UserPost(new JoinRecord("test1", ""));
         await UserPost(new JoinRecord("_test2", ""));
@@ -97,7 +97,7 @@ public class ServerTests
     }
 
     [TestMethod]
-    public async Task UsersPOST_OverrideOldEntry_NewPasswordNotOK()
+    public async Task PostingSecondSameUserDoesntAcceptNewPass()
     {
         await UserPost(new JoinRecord("test1", ""));
         await UserPost(new JoinRecord("_test2", ""));
@@ -113,7 +113,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task UsersGET_Unauthenticated_NotOK()
+    public async Task GettingUsersUnauthenticated()
     {
         await UserPost(new JoinRecord("test1", ""));
         await UserPost(new JoinRecord("_test2", ""));
@@ -127,7 +127,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task UsersGET_IncorrectlyAuthenticated_NotOK()
+    public async Task GettingUsersIncorrectlyAuthenticated()
     {
         await UserPost(new JoinRecord("test1", ""));
         await UserPost(new JoinRecord("_test2", ""));
@@ -142,7 +142,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task UsersGET_Authenticated_ReturnsSingleUser()
+    public async Task GettingSingleUser()
     {
         await UserPost(new JoinRecord("-test3", "hello"));
 
@@ -159,7 +159,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task UsersGET_Authenticated_ReturnsMultipleUsers()
+    public async Task GettingMultipleUsers()
     {
         await UserPost(new JoinRecord("test1", ""));
         await UserPost(new JoinRecord("_test2", ""));
@@ -178,7 +178,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task NewRandomQuestion_WhenQuestionsAreAvailable_ReturnsTrue()
+    public async Task NewRandomEntryWhenQuestionsAvailable()
     {
         File.WriteAllText(QUESTION_FILE, "Q1\n"
             + "Q1V1\n"
@@ -203,7 +203,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task NewRandomQuestion_NoQuestionsLeft_ReturnsFalse()
+    public async Task NewRandomEntryWhenNoQuestionsAvailable()
     {
         File.WriteAllText(QUESTION_FILE, "Q1\n"
             + "Q1V1\n"
@@ -229,7 +229,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task NewRandomQuestion_WhenQuestionsAreAvailable_AltStorageMixed_ReturnsTrue()
+    public async Task NewRandomEntryWhenQuestionsAvailableAltStorageMixed()
     {
         File.WriteAllText(QUESTION_FILE, "Q1\n"
             + "Q1V1\n"
@@ -254,7 +254,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task NewRandomQuestion_NoQuestionsLeft_AltStorageMixed_ReturnsFalse()
+    public async Task NewRandomEntryWhenNoQuestionsAvailableAltStorageMixed()
     {
         File.WriteAllText(QUESTION_FILE, "Q1\n"
             + "Q1V1\n"
@@ -280,7 +280,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task EntryCurrent_NoEntryGenerated_NotOK()
+    public async Task GetCurrentEntryWhenNoExisting()
     {
         // Create user and authenticate client
         await UserPost(new JoinRecord("user", ""));
@@ -293,7 +293,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task EntryCurrent_QuestionWithConstantVoteOptions_ReturnsUnvotedQuestion()
+    public async Task GetCurrentEntryWhenExisting()
     {
         // Create user and authenticate client
         await UserPost(new JoinRecord("user", ""));
@@ -322,7 +322,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task EntryCurrent_QuestionWithDifficultFormat_CorrectVoteOptions()
+    public async Task GetCurrentEntryAfterVoting()
     {
         // Create user and authenticate client
         await UserPost(new JoinRecord("user", ""));
@@ -351,7 +351,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task EntryCurrent_QuestionWithUserVoteOptions_ReturnsUnvotedQuestion()
+    public async Task GetCurrentEntryWithUserVoteOptions()
     {
         // Create user and authenticate client
         await UserPost(new JoinRecord("user1", ""));
@@ -382,7 +382,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task Entry_ForcedSinglePastEntry_ReturnsUnvotedQuestion()
+    public async Task GetPastEntry()
     {
         // Create user and authenticate client
         await UserPost(new JoinRecord("user", ""));
@@ -421,7 +421,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task Entry_MultiplePastEntries_ReturnsAllQuestions()
+    public async Task GetMultiplePastEntries()
     {
         // Create user and authenticate client
         await UserPost(new JoinRecord("user", ""));
@@ -470,7 +470,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task EntryVote_CorrectVote_OK()
+    public async Task Vote()
     {
         // Create user and authenticate client
         await UserPost(new JoinRecord("user", ""));
@@ -489,7 +489,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task EntryVote_IncorrectVote_NotOK()
+    public async Task VoteIncorrectOption()
     {
         // Create user and authenticate client
         await UserPost(new JoinRecord("user", ""));
@@ -508,7 +508,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task EntryVote_DoubleVote_OK()
+    public async Task OverwriteVote()
     {
         // Create user and authenticate client
         await UserPost(new JoinRecord("user", ""));
@@ -528,7 +528,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task EntryCurrent_ShowCorrectVotes()
+    public async Task CurrentEntryShowsAllVotes()
     {
         // Create user and authenticate client
         await UserPost(new JoinRecord("user1", ""));
@@ -569,7 +569,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task EntryCurrent_ShowUpdatedVote()
+    public async Task CurrentEntryShowOverwrittenVote()
     {
         // Create user and authenticate client
         await UserPost(new JoinRecord("user1", ""));
