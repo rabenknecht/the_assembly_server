@@ -5,9 +5,14 @@ using TheAssembly.Core;
 namespace TheAssembly.Server;
 
 
+// TODO: Remove logging
+
 public class Server
 {
-    public Server(string url, ServerStorage storage, bool shouldLog = false) : this([url], storage, shouldLog) {}
+    public Server(string url, ServerStorage storage, bool shouldLog = false)
+        : this([url], storage, shouldLog)
+    {
+    }
 
 
     public Server(IEnumerable<string> urls, ServerStorage storage, bool shouldLog = false)

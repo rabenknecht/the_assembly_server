@@ -45,7 +45,7 @@ public class ServerStorage : IDisposable
     /// <summary>
     /// Clears all stored data in the server directory. Does not clear questionFiles.
     /// </summary>
-    public void ClearStorage()
+    public void Clear()
     {
         UserStorage.Clear();
         EntryStorage.Clear();

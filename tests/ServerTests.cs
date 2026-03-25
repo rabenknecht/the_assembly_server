@@ -39,7 +39,7 @@ public class ServerTests
         _server = new Server(Url, _storage);
         _client = new HttpClient() { BaseAddress = new Uri(Url) };
 
-        _storage.GeneralQuestionStorage.RegisterQuestionFile(QUESTION_FILE);
+        _storage.GeneralQuestionStorage.TryRegisterQuestionFile(QUESTION_FILE);
 
         _server.RunAsync();
     }
@@ -49,7 +49,7 @@ public class ServerTests
     public void TestInit()
     {
         File.WriteAllText(QUESTION_FILE, string.Empty);
-        _storage.ClearStorage();
+        _storage.Clear();
         _client.DefaultRequestHeaders.Authorization = null;
     }
 

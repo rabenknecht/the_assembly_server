@@ -29,6 +29,8 @@ namespace TheAssembly.Server;
 /// </summary>
 public class GeneralQuestionStorage
 {
+    // TODO: Allow for clearing of the registered questions!
+
     /// <param name="referenceFile">The reference file is used to persistently load and save
     /// the references to the questionFiles loaded into this GeneralQuestionStorage in order
     /// of their indices.</param>
@@ -86,14 +88,15 @@ public class GeneralQuestionStorage
     }
 
 
-    public void RegisterQuestionFile(string filePath)
+    public bool TryRegisterQuestionFile(string filePath)
     {
         if (!File.Exists(filePath))
         {
-            throw new ArgumentException("Passed filePath does not point to a file!");
+            return false;
         }
 
         File.AppendAllText(_referenceFile, $"{filePath}\n");
+        return true;
     }
 
 

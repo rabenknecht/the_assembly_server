@@ -5,4 +5,5 @@
 cd src
 dotnet build
 cd ..
-dotnet src/bin/Debug/net10.0/the_assembly_server.dll -q questions/uncategorized.txt -c -ne --users testUser1 testUser2 testUser3
+dotnet src/bin/Debug/net10.0/the_assembly_server.dll clear serverDirectory
+dotnet src/bin/Debug/net10.0/the_assembly_server.dll run serverDirectory
