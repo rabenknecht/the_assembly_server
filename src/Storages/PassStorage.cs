@@ -8,7 +8,7 @@ namespace TheAssembly.Server;
 /// <summary>
 /// All accessors validate beforehand if passed usernames are legal.
 /// </summary>
-internal class PassStorage
+public class PassStorage
 {
     /// <param name="baseDir">Which directory can the PassStorage use to save passwords.</param>
     public PassStorage(string baseDir)

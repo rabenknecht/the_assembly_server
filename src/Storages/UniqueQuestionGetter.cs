@@ -2,7 +2,7 @@ using TheAssembly.Core;
 
 namespace TheAssembly.Server;
 
-internal class UniqueQuestionGetter
+public class UniqueQuestionGetter
 {
     /// <param name="storage">From where to fetch questions.</param>
     /// <param name="filePath">The file is needed to store what questions are already used or still available.</param>

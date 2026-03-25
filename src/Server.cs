@@ -7,31 +7,13 @@ namespace TheAssembly.Server;
 
 public class Server
 {
-    public Server(string url, string fileStorage, params string[] questionFiles) : this([url], fileStorage, questionFiles) {}
+    public Server(string url, ServerStorage storage, bool shouldLog = false) : this([url], storage, shouldLog) {}
 
 
-    public Server(IEnumerable<string> urls, string fileStorage, IEnumerable<string> questionFiles, bool shouldLog = false)
+    public Server(IEnumerable<string> urls, ServerStorage storage, bool shouldLog = false)
     {
-        var passDir = Path.Combine(fileStorage, "passwords");
-        var usedQuestionsFile = Path.Combine(fileStorage, "usedQuestions");
-        var entryFile = Path.Combine(fileStorage, "entries");
-
-        if (File.Exists(passDir)) throw new ArgumentException("Invalid fileStorage structure");
-        if (Directory.Exists(usedQuestionsFile)) throw new ArgumentException("Invalid fileStorage structure");
-
-        if (!Directory.Exists(passDir)) Directory.CreateDirectory(passDir);
-        if (!File.Exists(usedQuestionsFile)) File.Create(usedQuestionsFile).Close();
-        // EntryStorage automatically generates its file
-        // if (!File.Exists(entryFile)) File.Create(entryFile).Close();
-
-
+        _storage = storage;
         _shouldLog = shouldLog;
-        _passStorage = new PassStorage(passDir);
-        _questionStorage = new QuestionStorage(questionFiles);
-        _questionGetter = new UniqueQuestionGetter(_questionStorage, usedQuestionsFile);
-        _entryStorage = new EntryStorage(entryFile);
-
-
         _listener = new HttpListener();
         // I have no fucking idea how HttpListeners actually authenticate Basic.
         // It always ends up forbidding every connection, so we just authenticate
@@ -82,9 +64,9 @@ public class Server
             if (request.HttpMethod == "POST"
                 && CheckLocalRequestUrl(request, "users")
                 && requestContent.TryJsonDeserialize<JoinRecord>(out var joinRecord)
-                && _passStorage.CanBeNew(joinRecord.user))
+                && _storage.PassStorage.CanBeNew(joinRecord.user))
             {
-                TryAddUser(joinRecord.user, joinRecord.password);
+                _storage.PassStorage.Update(joinRecord.user, joinRecord.password);
                 response.StatusCode = (int) HttpStatusCode.OK;
             }
 
@@ -93,7 +75,7 @@ public class Server
                 && request.HttpMethod == "GET"
                 && CheckLocalRequestUrl(request, "users"))
             {
-                responseContent += string.Join('\n', _passStorage.EnumerateUsers);
+                responseContent += string.Join('\n', _storage.PassStorage.EnumerateUsers);
                 response.StatusCode = (int) HttpStatusCode.OK;
             }
 
@@ -101,7 +83,7 @@ public class Server
             else if (authUser != null
                 && request.HttpMethod == "GET"
                 && CheckLocalRequestUrl(request, "entry/current")
-                && _entryStorage.TryGetLastJson(out var entryJson))
+                && _storage.EntryStorage.TryGetLastJson(out var entryJson))
             {
                 response.StatusCode = (int) HttpStatusCode.OK;
                 responseContent += entryJson;
@@ -113,16 +95,16 @@ public class Server
                 && CheckLocalRequestUrl(request, "entry"))
             {
                 response.StatusCode = (int) HttpStatusCode.OK;
-                responseContent += _entryStorage.GetAllExceptLastJson();
+                responseContent += _storage.EntryStorage.GetAllExceptLastJson();
             }
 
             // entry.vote.POST
             else if (authUser != null
                 && request.HttpMethod == "POST"
                 && CheckLocalRequestUrl(request, "entry/vote")
-                && !_entryStorage.IsEmpty)
+                && !_storage.EntryStorage.IsEmpty)
             {
-                var currentEntry = _entryStorage.GetLast()!;
+                var currentEntry = _storage.EntryStorage.GetLast()!;
                 var toVote = currentEntry.voteOptions!.FirstOrDefault(v => v.votingWhat == requestContent);
                 if (toVote == null)
                 {
@@ -132,7 +114,7 @@ public class Server
                 {
                     RemoveOldVotes(authUser, currentEntry);
                     toVote.votedBy = toVote.votedBy!.Add(authUser);
-                    _entryStorage.UpdateLast(currentEntry);
+                    _storage.EntryStorage.UpdateLast(currentEntry);
                     response.StatusCode = (int) HttpStatusCode.OK;
                 }
             }
@@ -164,82 +146,6 @@ public class Server
 
 
     /// <summary>
-    /// Clears all stored data in the server directory.
-    /// </summary>
-    public void ClearStorage()
-    {
-        _passStorage.Clear();
-        _entryStorage.Clear();
-        _questionGetter.Clear();
-    }
-
-
-    /// <summary>Can be called in a separate thread to the server running.</summary>
-    /// <returns>False if loading a new question failed.
-    /// Usually happens when we server ran out of unique question.</returns>
-    public bool NewRandomEntry()
-    {
-        if (!_questionGetter.TryGetRandom(out var question)) return false;
-
-        var split = question.Split('\n');
-        var entry = new EntryRecord
-        (
-            split[0],
-            DateTimeOffset.Now,
-            split.Skip(1)
-                .SelectMany(s => s.Trim() == ":u" ? _passStorage.EnumerateUsers : [s])
-                .Select(v => new VoteOptionRecord(v, []))
-                .ToArray()
-        );
-
-        _entryStorage.AddLast(entry);
-        return true;
-    }
-
-
-    public void DailyNewRandomEntry(TimeOnly whenLocal)
-    {
-        _dailyNewEntryTimes.Add(whenLocal);
-        _dailyNewEntryRunningThreads.Add(new Thread(() =>
-        {
-            while (true)
-            {
-                Thread.Sleep(whenLocal - TimeOnly.FromDateTime(DateTime.Now));
-                NewRandomEntry();
-            }
-        }));
-        _dailyNewEntryRunningThreads[^1].Start();
-    }
-
-
-    public IEnumerable<TimeOnly> IterDailyNewRandomEntries()
-    {
-        return _dailyNewEntryTimes;
-    }
-
-
-    public void StopAllDailyNewRandomEntry()
-    {
-        foreach (var t in _dailyNewEntryRunningThreads)
-        {
-            // TODO: Read now thread interruption acts
-            t.Interrupt();
-        }
-        _dailyNewEntryRunningThreads.Clear();
-        _dailyNewEntryTimes.Clear();
-    }
-
-
-    public bool TryAddUser(string? user, string? pass)
-    {
-        return _passStorage.Update(user, pass);
-    }
-
-
-    public int QuestionCount => _questionStorage.TotalQuestionCount;
-
-
-    /// <summary>
     /// Returns the authenticated user of the request.
     /// </summary>
     private string? GetAuthenticatedUser(HttpListenerRequest request)
@@ -247,7 +153,7 @@ public class Server
         var authHeader = request.Headers[nameof(HttpRequestHeader.Authorization)];
         if (authHeader == null) return null;
         if (!authHeader.TryBasicAuthHeaderToUserPass(out var user, out var pass)) return null;
-        if (!_passStorage.Correct(user, pass)) return null;
+        if (!_storage.PassStorage.Correct(user, pass)) return null;
         return user;
     }
 
@@ -285,12 +191,5 @@ public class Server
     private readonly bool _shouldLog;
     private readonly HttpListener _listener;
     private readonly IReadOnlyCollection<string> _urls;
-
-    private readonly PassStorage _passStorage;
-    private readonly EntryStorage _entryStorage;
-    private readonly QuestionStorage _questionStorage;
-    private readonly UniqueQuestionGetter _questionGetter;
-
-    private readonly List<Thread> _dailyNewEntryRunningThreads = new();
-    private readonly List<TimeOnly> _dailyNewEntryTimes = new();
+    private readonly ServerStorage _storage;
 }

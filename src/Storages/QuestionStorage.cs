@@ -5,7 +5,7 @@ namespace TheAssembly.Server;
 /// <summary>
 /// THIS CLASS DOES NOT SUPPORT MULTITHREADED ACCESSING!!!!!
 /// </summary>
-internal class QuestionStorage
+public class QuestionStorage
 {
     public QuestionStorage(IEnumerable<string> filePaths)
     {

@@ -15,6 +15,7 @@ public class ServerTests
 
     // Always non null as TestInitialize is always executed before any test
     private static HttpClient _client = null!;
+    private static ServerStorage _storage = null!;
     private static Server _server = null!;
 
     private const string TEST_DIR = "/tmp/the_assembly_testing/servertests";
@@ -32,7 +33,8 @@ public class ServerTests
         Directory.CreateDirectory(TEST_DIR); // We need the testdir for the questionfile
         File.WriteAllText(QUESTION_FILE, string.Empty);
 
-        _server = new Server(Url, SERVER_DIR, QUESTION_FILE);
+        _storage = new ServerStorage(SERVER_DIR, QUESTION_FILE);
+        _server = new Server(Url, _storage);
         _client = new HttpClient() { BaseAddress = new Uri(Url) };
 
         _server.RunAsync();
@@ -43,7 +45,7 @@ public class ServerTests
     public void TestInit()
     {
         File.WriteAllText(QUESTION_FILE, string.Empty);
-        _server.ClearStorage();
+        _storage.ClearStorage();
         _client.DefaultRequestHeaders.Authorization = null;
     }
 
@@ -191,10 +193,10 @@ public class ServerTests
             + "Q4\n"
             + "Q4V1\n"
             + "Q4V2");
-        Assert.IsTrue(_server.NewRandomEntry());
-        Assert.IsTrue(_server.NewRandomEntry());
-        Assert.IsTrue(_server.NewRandomEntry());
-        Assert.IsTrue(_server.NewRandomEntry());
+        Assert.IsTrue(_storage.NewRandomEntry());
+        Assert.IsTrue(_storage.NewRandomEntry());
+        Assert.IsTrue(_storage.NewRandomEntry());
+        Assert.IsTrue(_storage.NewRandomEntry());
     }
 
 
@@ -216,11 +218,11 @@ public class ServerTests
             + "Q4\n"
             + "Q4V1\n"
             + "Q4V2");
-        _server.NewRandomEntry();
-        _server.NewRandomEntry();
-        _server.NewRandomEntry();
-        _server.NewRandomEntry();
-        Assert.IsFalse(_server.NewRandomEntry());
+        _storage.NewRandomEntry();
+        _storage.NewRandomEntry();
+        _storage.NewRandomEntry();
+        _storage.NewRandomEntry();
+        Assert.IsFalse(_storage.NewRandomEntry());
     }
 
 
@@ -248,7 +250,7 @@ public class ServerTests
             + "No\n"
             + "Yes\n"
             + "Sometimes");
-        _server.NewRandomEntry();
+        _storage.NewRandomEntry();
 
         var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
         var responseText = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
@@ -277,7 +279,7 @@ public class ServerTests
             + "    No\n"
             + "Yes    \n"
             + "Sometimes\n ");
-        _server.NewRandomEntry();
+        _storage.NewRandomEntry();
 
         var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
         var responseText = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
@@ -308,7 +310,7 @@ public class ServerTests
         File.WriteAllText(QUESTION_FILE, "Userquestion?\n"
             + ":u\n"
             + "Nobody");
-        _server.NewRandomEntry();
+        _storage.NewRandomEntry();
 
         var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
         var responseText = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
@@ -338,12 +340,12 @@ public class ServerTests
             + "Picard\n"
             + "Susane\n"
             + "Your mother");
-        _server.NewRandomEntry();
+        _storage.NewRandomEntry();
 
         File.AppendAllText(QUESTION_FILE, "\n\nTest\n"
             + "test1\n"
             + "test2\n");
-        _server.NewRandomEntry();
+        _storage.NewRandomEntry();
 
         var response = await _client.GetAsync("entry", TestContext.CancellationToken);
         var responseText = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
@@ -387,10 +389,10 @@ public class ServerTests
             + "Q4\n"
             + "Q4V1\n"
             + "Q4V2");
-        _server.NewRandomEntry();
-        _server.NewRandomEntry();
-        _server.NewRandomEntry();
-        _server.NewRandomEntry();
+        _storage.NewRandomEntry();
+        _storage.NewRandomEntry();
+        _storage.NewRandomEntry();
+        _storage.NewRandomEntry();
 
         var response = await _client.GetAsync("entry", TestContext.CancellationToken);
         var responseText = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
@@ -425,7 +427,7 @@ public class ServerTests
             + "No\n"
             + "Yes\n"
             + "Sometimes\n");
-        _server.NewRandomEntry();
+        _storage.NewRandomEntry();
 
         var response = await _client.PostAsync("entry/vote", new StringContent("Yes", Encoding.UTF8), TestContext.CancellationToken);
 
@@ -444,7 +446,7 @@ public class ServerTests
             + "No\n"
             + "Yes\n"
             + "Sometimes\n");
-        _server.NewRandomEntry();
+        _storage.NewRandomEntry();
 
         var response = await _client.PostAsync("entry/vote", new StringContent("Wiener", Encoding.UTF8), TestContext.CancellationToken);
 
@@ -463,7 +465,7 @@ public class ServerTests
             + "No\n"
             + "Yes\n"
             + "Sometimes\n");
-        _server.NewRandomEntry();
+        _storage.NewRandomEntry();
 
         await _client.PostAsync("entry/vote", new StringContent("No", Encoding.UTF8), TestContext.CancellationToken);
         var response = await _client.PostAsync("entry/vote", new StringContent("Yes", Encoding.UTF8), TestContext.CancellationToken);
@@ -487,7 +489,7 @@ public class ServerTests
             + "No\n"
             + "Yes\n"
             + "Sometimes\n");
-        _server.NewRandomEntry();
+        _storage.NewRandomEntry();
 
         _client.AddBasicAuthHeader("user1", "");
         await _client.PostAsync("entry/vote", new StringContent("Yes", Encoding.UTF8), TestContext.CancellationToken);
@@ -523,7 +525,7 @@ public class ServerTests
             + "No\n"
             + "Yes\n"
             + "Sometimes\n");
-        _server.NewRandomEntry();
+        _storage.NewRandomEntry();
 
         _client.AddBasicAuthHeader("user1", "");
         await _client.PostAsync("entry/vote", new StringContent("Yes", Encoding.UTF8), TestContext.CancellationToken);
