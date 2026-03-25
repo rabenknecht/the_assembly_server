@@ -1,12 +1,24 @@
 namespace TheAssembly.Server;
 
-public class ServerStorage
+/// <summary>
+/// Persistent storage used by the server to store users and their passwords, entries and alike.
+/// <para/>
+/// Can be used to modify the storage without saving it in a server instance.
+/// <para/>
+/// Can be used while another thread or application instance already has a ServerStorage instance.
+/// </summary>
+public class ServerStorage : IDisposable
 {
-    public ServerStorage(string fileStorage, params string[] questionFiles)
+    /// <param name="directory">The directory in which to setup the ServerStorage.
+    /// Can have existing files and directory from a pervious ServerStorage instance.</param>
+    /// <param name="questionFiles">The files used to fetch questions in the GeneralQuestionStorage.
+    /// See GeneralQuestionStorage.cs for more info on question files.</param>
+    /// <exception cref="ArgumentException">When the file and directory structure of fileStorage is invalid</exception>
+    public ServerStorage(string directory, params string[] questionFiles)
     {
-        var passDir = Path.Combine(fileStorage, "passwords");
-        var usedQuestionsFile = Path.Combine(fileStorage, "usedQuestions");
-        var entryFile = Path.Combine(fileStorage, "entries");
+        var passDir = Path.Combine(directory, "passwords");
+        var usedQuestionsFile = Path.Combine(directory, "usedQuestions");
+        var entryFile = Path.Combine(directory, "entries");
 
         if (File.Exists(passDir)) throw new ArgumentException("Invalid fileStorage structure");
         if (Directory.Exists(usedQuestionsFile)) throw new ArgumentException("Invalid fileStorage structure");
@@ -63,6 +75,12 @@ public class ServerStorage
     }
 
 
+    /// <param name="whenLocal">At which local time should the ServerStorage automatically load a new random entry
+    /// (See NewRandomEntry())?
+    /// <para/>
+    /// This member is exclusive to THIS ServerStorage instance in this runtime and will only create new entries as long as this
+    /// instance is not disposed, other ServerStorages with the same directory will NOT generate new random entries.
+    /// </param>
     public void DailyNewRandomEntry(TimeOnly whenLocal)
     {
         _dailyNewEntryTimes.Add(whenLocal);
@@ -93,6 +111,12 @@ public class ServerStorage
         }
         _dailyNewEntryRunningThreads.Clear();
         _dailyNewEntryTimes.Clear();
+    }
+
+
+    public void Dispose()
+    {
+        StopAllDailyNewRandomEntry();
     }
 
 

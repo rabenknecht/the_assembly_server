@@ -2,6 +2,12 @@ using TheAssembly.Core;
 
 namespace TheAssembly.Server;
 
+// TODO: I am not reacting to modifications outside!!!!!
+
+/// <summary>
+/// Tracks which questions have already been used in a file, therefore allowing access
+/// to used or unused questions.
+/// </summary>
 public class UniqueQuestionStorage
 {
     /// <param name="storage">From where to fetch questions.</param>

@@ -2,8 +2,32 @@ using System.Text;
 
 namespace TheAssembly.Server;
 
+// The format of a questionFile is as follows:
+// QUESTION1?
+// VOTEOPTION1
+// VOTEOPTION2
+// ...
+// LASTVOTEOPTION
+//
+// QUESTION2?
+// VOTEOPTION1
+// ...
+// LASTVOTEOPTION
+
+// Use ":u" as a vote option to insert the users of the storage that uses said question.
+// All members are trimmed before use
+// More than 2 linebreaks to split questions breaks this storage.
+
+
+
 /// <summary>
-/// THIS CLASS DOES NOT SUPPORT MULTITHREADED ACCESSING!!!!!
+/// Storage used to access individual questions via indexing of multiple files and the questions they contain.
+/// <para/>
+/// Question files can have new questions added outside this application by appending them to any used question file.
+/// <para/>
+/// Question files can have their questions modified outside this application. Modifications will not affect existing entries.
+/// <para/>
+/// Question files cannot be removed outside this application without breaking the UniqueQuestionStorage.
 /// </summary>
 public class GeneralQuestionStorage
 {
