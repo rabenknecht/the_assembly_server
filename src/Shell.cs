@@ -70,7 +70,11 @@ public static class Shell
                 return;
             }
 
-
+            var result = storage.UserStorage.Add(p.GetValue(userArg), p.GetValue(passArg));
+            if (result != UserStorage.Error.None)
+            {
+                Error.WriteLine("Could not add user: " + result.ToString());
+            }
         });
 
         var rootCmd = new RootCommand();

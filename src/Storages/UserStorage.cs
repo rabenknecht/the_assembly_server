@@ -38,16 +38,35 @@ public class UserStorage
     /// <param/>
     /// Returns false if the passed user is illegal.
     /// </summary>
-    /// <exception cref="ArgumentException">When user has a illegal name.</exception>
-    public bool Update(string? user, string? pass)
+    public Error AddOrUpdate(string? user, string? pass)
     {
-        if (!IsUserLegal(user)) return false;
+        if (!IsUserLegal(user)) return Error.InvalidUsername;
 
         var salt = RandomNumberGenerator.GetBytes(SALT_LENGTH);
         var hash = HashPass(pass ?? "", salt, user!);
         File.WriteAllBytes(PassFileFor(user!), salt.Concat(hash));
 
-        return true;
+        return Error.None;
+    }
+
+
+    /// <summary>
+    /// Creates a new entry if the user was not added before. Fails if the user already has a pass.
+    /// <param/>
+    /// Returns false if the passed user is illegal.
+    /// </summary>
+    public Error Add(string? user, string? pass)
+    {
+        if (!IsUserLegal(user)) return Error.InvalidUsername;
+
+        var passFileFor = PassFileFor(user!);
+        if (File.Exists(passFileFor)) return Error.UserAlreadyExists;
+
+        var salt = RandomNumberGenerator.GetBytes(SALT_LENGTH);
+        var hash = HashPass(pass ?? "", salt, user!);
+        File.WriteAllBytes(PassFileFor(user!), salt.Concat(hash));
+
+        return Error.None;
     }
 
 
@@ -84,6 +103,14 @@ public class UserStorage
     {
         const string legalChars = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
         return user != null && user.All(legalChars.Contains);
+    }
+
+
+    public enum Error
+    {
+        None = 0,
+        InvalidUsername = 0x1,
+        UserAlreadyExists = 0x2,
     }
 
 

@@ -69,9 +69,8 @@ public class Server
             if (request.HttpMethod == "POST"
                 && CheckLocalRequestUrl(request, "users")
                 && requestContent.TryJsonDeserialize<JoinRecord>(out var joinRecord)
-                && _storage.UserStorage.CanBeNew(joinRecord.user))
+                && _storage.UserStorage.Add(joinRecord.user, joinRecord.password) != UserStorage.Error.None)
             {
-                _storage.UserStorage.Update(joinRecord.user, joinRecord.password);
                 response.StatusCode = (int) HttpStatusCode.OK;
             }
 
