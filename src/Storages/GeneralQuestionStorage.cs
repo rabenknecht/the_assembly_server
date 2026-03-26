@@ -88,15 +88,30 @@ public class GeneralQuestionStorage
     }
 
 
-    public bool TryRegisterQuestionFile(string filePath)
+    public Error TryRegisterQuestionFile(string filePath)
     {
+        // We only want to deal with absolute paths to easily detect duplicate registrations
+        filePath = Path.GetFullPath(filePath);
+
         if (!File.Exists(filePath))
         {
-            return false;
+            return Error.FileDoesntExist;
         }
 
+        if (GetSingleFiles().Any(s => s.FilePath == filePath))
+        {
+            return Error.QuestionFileAlreadyRegistered;
+        }
         File.AppendAllText(_referenceFile, $"{filePath}\n");
-        return true;
+        return Error.None;
+    }
+
+
+    public enum Error
+    {
+        None = 0,
+        QuestionFileAlreadyRegistered = 1,
+        FileDoesntExist = 2,
     }
 
 

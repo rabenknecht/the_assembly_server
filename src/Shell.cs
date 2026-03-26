@@ -8,7 +8,7 @@ public static class Shell
 {
     public static void Main(string[] args)
     {
-        var dirArg = new Argument<string>("directory")
+        var serverDirArg = new Argument<string>("serverDirectory")
         {
             Description = "The directory used as persistent storage for the server.",
         };
@@ -21,6 +21,11 @@ public static class Shell
             Description = "The password of the user to create",
             DefaultValueFactory = _ => "",
         };
+        var questionFilesArg = new Argument<string[]>("questionFiles")
+        {
+            Description = "The questionFiles that the server should be able to fetch questions from. "
+                + "For more info about formatting, check the repositories readme",
+        };
         var urlOption = new Option<Uri[]>("--url", "-u")
         {
             Description = "The urls over which the server should be accessable.",
@@ -29,23 +34,12 @@ public static class Shell
 
         var runCmd = new Command("run", "Runs the server.")
         {
-            dirArg,
+            serverDirArg,
             urlOption,
         };
-        var clearCmd = new Command("clear", "Clears the server storage.")
-        {
-            dirArg,
-        };
-        var newUserCmd = new Command("newUser", "Creates a new user.")
-        {
-            dirArg,
-            userArg,
-            passArg,
-        };
-
         runCmd.SetAction(p =>
         {
-            if (!TryCreateStorage(p.GetValue(dirArg), out var storage))
+            if (!TryCreateStorage(p.GetValue(serverDirArg), out var storage))
             {
                 return;
             }
@@ -53,9 +47,14 @@ public static class Shell
             var server = new Server(p.GetValue(urlOption)!.Select(u => u.ToString()), storage);
             server.RunForever();
         });
+
+        var clearCmd = new Command("clear", "Clears the server storage.")
+        {
+            serverDirArg,
+        };
         clearCmd.SetAction(p =>
         {
-            if (!TryCreateStorage(p.GetValue(dirArg), out var storage))
+            if (!TryCreateStorage(p.GetValue(serverDirArg), out var storage))
             {
                 return;
             }
@@ -63,9 +62,16 @@ public static class Shell
             storage.Clear();
             WriteLine("Server storage cleared!");
         });
+
+        var newUserCmd = new Command("newUser", "Creates a new user.")
+        {
+            serverDirArg,
+            userArg,
+            passArg,
+        };
         newUserCmd.SetAction(p =>
         {
-            if (!TryCreateStorage(p.GetValue(dirArg), out var storage))
+            if (!TryCreateStorage(p.GetValue(serverDirArg), out var storage))
             {
                 return;
             }
@@ -77,10 +83,33 @@ public static class Shell
             }
         });
 
+        var refQuestionsCmd = new Command("refQuestions", "References questionFiles on the server.")
+        {
+            serverDirArg,
+            questionFilesArg,
+        };
+        refQuestionsCmd.SetAction(p =>
+        {
+            if (!TryCreateStorage(p.GetValue(serverDirArg), out var storage))
+            {
+                return;
+            }
+
+            foreach (var file in p.GetValue(questionFilesArg) ?? [])
+            {
+                var result = storage.GeneralQuestionStorage.TryRegisterQuestionFile(file);
+                if (result != GeneralQuestionStorage.Error.None)
+                {
+                    Error.WriteLine($"Failed to register questionFile \"{file}\": {result}");
+                }
+            }
+        });
+
         var rootCmd = new RootCommand();
         rootCmd.Subcommands.Add(runCmd);
         rootCmd.Subcommands.Add(clearCmd);
         rootCmd.Subcommands.Add(newUserCmd);
+        rootCmd.Subcommands.Add(refQuestionsCmd);
         rootCmd.Parse(args).Invoke();
         return;
 
