@@ -32,6 +32,7 @@ public static class Shell
             DefaultValueFactory = _ => [ new Uri("http://localhost:2023/") ],
         };
 
+
         var runCmd = new Command("run", "Runs the server.")
         {
             serverDirArg,
@@ -48,6 +49,7 @@ public static class Shell
             server.RunForever();
         });
 
+
         var clearCmd = new Command("clear", "Clears the server storage.")
         {
             serverDirArg,
@@ -62,6 +64,7 @@ public static class Shell
             storage.Clear();
             WriteLine("Server storage cleared!");
         });
+
 
         var newUserCmd = new Command("newUser", "Creates a new user.")
         {
@@ -82,6 +85,7 @@ public static class Shell
                 Error.WriteLine("Could not add user: " + result.ToString());
             }
         });
+
 
         var refQuestionsCmd = new Command("refQuestions", "References questionFiles on the server.")
         {
@@ -105,11 +109,31 @@ public static class Shell
             }
         });
 
+
+        var questionCountCmd = new Command("questionCount", "Prints the total number of questions currently accessable to the server.")
+        {
+            serverDirArg,
+        };
+        questionCountCmd.SetAction(p =>
+        {
+            if (!TryCreateStorage(p.GetValue(serverDirArg), out var storage))
+            {
+                return;
+            }
+
+            WriteLine($"QUESTIONCOUNT:");
+            WriteLine($"\tTotal:{storage.GeneralQuestionStorage.TotalQuestionCount}");
+            WriteLine($"\tUnused:{storage.UniqueQuestionStorage.UnusedQuestionsCount}");
+            WriteLine($"\tUsed:{storage.UniqueQuestionStorage.UsedQuestionsCount}");
+        });
+
+
         var rootCmd = new RootCommand();
         rootCmd.Subcommands.Add(runCmd);
         rootCmd.Subcommands.Add(clearCmd);
         rootCmd.Subcommands.Add(newUserCmd);
         rootCmd.Subcommands.Add(refQuestionsCmd);
+        rootCmd.Subcommands.Add(questionCountCmd);
         rootCmd.Parse(args).Invoke();
         return;
 

@@ -16,4 +16,6 @@ dotnet src/bin/Debug/net10.0/the_assembly_server.dll newUser serverDirectory tes
 
 dotnet src/bin/Debug/net10.0/the_assembly_server.dll refQuestions serverDirectory questions/uncategorized.txt
 
+dotnet src/bin/Debug/net10.0/the_assembly_server.dll questionCount serverDirectory
+
 dotnet src/bin/Debug/net10.0/the_assembly_server.dll run serverDirectory

@@ -26,7 +26,7 @@ public class UniqueQuestionStorage
     {
         UpdateAlreadyUsed();
 
-        if (TotalUsedQuestions == _storage.TotalQuestionCount)
+        if (UsedQuestionsCount == _storage.TotalQuestionCount)
         {
             result = null!;
             return false;
@@ -46,6 +46,18 @@ public class UniqueQuestionStorage
         return true;
     }
 
+
+    public int UsedQuestionsCount
+    {
+        get
+        {
+            UpdateAlreadyUsed();
+            return _alreadyUsed.Sum(x => x.Count);
+        }
+    }
+
+
+    public int UnusedQuestionsCount => _storage.TotalQuestionCount - UsedQuestionsCount;
 
     public void Clear()
     {
@@ -84,12 +96,6 @@ public class UniqueQuestionStorage
         }
         return unusedQuestionIndex;
     }
-
-
-    /// <summary>
-    /// WARNING: DOES NOT UPDATE ALREADYUSED!!!!!
-    /// </summary>
-    private int TotalUsedQuestions => _alreadyUsed.Sum(x => x.Count);
 
 
     private void UpdateAlreadyUsed()
