@@ -24,8 +24,6 @@ public class UniqueQuestionStorage
     /// This usually fails when all questions are already used!</returns>
     public bool TryGetRandom(out string result)
     {
-        UpdateAlreadyUsed();
-
         if (UsedQuestionsCount == _storage.TotalQuestionCount)
         {
             result = null!;
@@ -34,9 +32,9 @@ public class UniqueQuestionStorage
 
         // I know this means that not every question has the
         // exact same chance of appearing, and I don't care. This is good enough
-        var unusedFile = Random.Shared.Next(_storage.FileCount - AlreadyUsedFiles().Count());
+        var unusedFile = Random.Shared.Next(_storage.FileCount - EnumAlreadyUsedFilesIndices().Count());
         var actualFile = UnusedToActualFile(unusedFile);
-        var unusedQuestion = Random.Shared.Next(_storage.QuestionCount(unusedFile) - _alreadyUsed[actualFile].Count);
+        var unusedQuestion = Random.Shared.Next(_storage.QuestionCount(unusedFile) - GetAlreadyUsed()[actualFile].Count);
         var actualQuestion = UnusedToActualQuestion(unusedQuestion, actualFile);
 
         File.AppendAllBytes(FilePath, BitConverter.GetBytes(actualFile));
@@ -51,8 +49,7 @@ public class UniqueQuestionStorage
     {
         get
         {
-            UpdateAlreadyUsed();
-            return _alreadyUsed.Sum(x => x.Count);
+            return GetAlreadyUsed().Sum(x => x.Count);
         }
     }
 
@@ -65,15 +62,15 @@ public class UniqueQuestionStorage
     }
 
 
-    private IEnumerable<int> AlreadyUsedFiles()
+    private IEnumerable<int> EnumAlreadyUsedFilesIndices()
     {
-        return Enumerable.Range(0, _alreadyUsed.Length).Where(i => _alreadyUsed[i].Count == _storage.QuestionCount(i));
+        return Enumerable.Range(0, GetAlreadyUsed().Length).Where(i => GetAlreadyUsed()[i].Count == _storage.QuestionCount(i));
     }
 
 
     private int UnusedToActualFile(int unusedFileIndex)
     {
-        foreach (var i in AlreadyUsedFiles())
+        foreach (var i in EnumAlreadyUsedFilesIndices())
         {
             if (i <= unusedFileIndex)
             {
@@ -86,8 +83,8 @@ public class UniqueQuestionStorage
 
     private int UnusedToActualQuestion(int unusedQuestionIndex, int actualFileIndex)
     {
-        _alreadyUsed[actualFileIndex].Sort();
-        foreach (var i in _alreadyUsed[actualFileIndex])
+        GetAlreadyUsed()[actualFileIndex].Sort();
+        foreach (var i in GetAlreadyUsed()[actualFileIndex])
         {
             if (i <= unusedQuestionIndex)
             {
@@ -98,10 +95,19 @@ public class UniqueQuestionStorage
     }
 
 
-    private void UpdateAlreadyUsed()
+    /// <summary>
+    /// Ensures that the alreadyUsed array is always up to date.
+    /// <para/>
+    /// _alreadyUsed[fileIndex] yields the used questionIndices for that specified file.
+    /// </summary>
+    private List<int>[] GetAlreadyUsed()
     {
         var newLastAlreadyUsedWrite = File.GetLastWriteTime(FilePath);
-        if (newLastAlreadyUsedWrite != _lastAlreadyUsedWrite)
+        if (newLastAlreadyUsedWrite == _lastAlreadyUsedWrite)
+        {
+            return _alreadyUsed;
+        }
+        else
         {
             _lastAlreadyUsedWrite = newLastAlreadyUsedWrite;
 
@@ -132,12 +138,14 @@ public class UniqueQuestionStorage
                     _alreadyUsed[fileIndex].Add(questionIndex);
                 }
             }
+
+            return _alreadyUsed;
         }
     }
 
 
     private readonly GeneralQuestionStorage _storage;
-    // _alreadyUsed[fileIndex] yields the used questionIndices for that specified file.
+    // Use GetAlreadyUsed to access this instead to ensure this stays updated!
     private List<int>[] _alreadyUsed = [];
     private DateTime? _lastAlreadyUsedWrite;
 }
