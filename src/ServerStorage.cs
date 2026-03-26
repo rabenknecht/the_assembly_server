@@ -11,35 +11,53 @@ public class ServerStorage : IDisposable
 {
     /// <param name="directory">The directory in which to setup the ServerStorage.
     /// Can have existing files and directory from a pervious ServerStorage instance.</param>
-    /// <exception cref="ArgumentException">When the file and directory structure of fileStorage is invalid</exception>
-    public ServerStorage(string directory)
+    /// <returns>Null when the directory passed has a illegal file structure</returns>
+    public static ServerStorage? CreateIn(string directory)
     {
-        var passDir = Path.Combine(directory, "passwords");
+        var userDir = Path.Combine(directory, "passwords");
         var usedQuestionsFile = Path.Combine(directory, "usedQuestions");
         var questionReferenceFile = Path.Combine(directory, "questionFileRefs");
         var entryFile = Path.Combine(directory, "entries");
 
-        if (File.Exists(passDir)) throw new ArgumentException("Invalid fileStorage structure");
-        if (Directory.Exists(usedQuestionsFile)) throw new ArgumentException("Invalid fileStorage structure");
-        if (Directory.Exists(questionReferenceFile)) throw new ArgumentException("Invalid fileStorage structure");
+        if (Directory.Exists(directory))
+        {
+            var existingDirs = Directory.EnumerateDirectories(directory).ToList();
+            var existingFiles = Directory.EnumerateFiles(directory).ToList();
 
-        if (!Directory.Exists(passDir)) Directory.CreateDirectory(passDir);
+            existingDirs.Remove(userDir);
+            existingFiles.Remove(usedQuestionsFile);
+            existingFiles.Remove(questionReferenceFile);
+            existingFiles.Remove(entryFile);
+
+            if (existingDirs.Count != 0 || existingFiles.Count != 0)
+            {
+                return null;
+            }
+        }
+        else
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        if (!Directory.Exists(userDir)) Directory.CreateDirectory(userDir);
         if (!File.Exists(usedQuestionsFile)) File.Create(usedQuestionsFile).Close();
         if (!File.Exists(questionReferenceFile)) File.Create(questionReferenceFile).Close();
-        // EntryStorage automatically generates its file
+        // EntryStorage creates its own file!
         // if (!File.Exists(entryFile)) File.Create(entryFile).Close();
 
-        UserStorage = new UserStorage(passDir);
-        GeneralQuestionStorage = new GeneralQuestionStorage(questionReferenceFile);
-        UniqueQuestionStorage = new UniqueQuestionStorage(GeneralQuestionStorage, usedQuestionsFile);
-        EntryStorage = new EntryStorage(entryFile);
+        var result = new ServerStorage();
+        result.UserStorage = new UserStorage(userDir);
+        result.EntryStorage = new EntryStorage(entryFile);
+        result.GeneralQuestionStorage = new GeneralQuestionStorage(questionReferenceFile);
+        result.UniqueQuestionStorage = new UniqueQuestionStorage(result.GeneralQuestionStorage, usedQuestionsFile);
+        return result;
     }
 
 
-    public readonly UserStorage UserStorage;
-    public readonly EntryStorage EntryStorage;
-    public readonly GeneralQuestionStorage GeneralQuestionStorage;
-    public readonly UniqueQuestionStorage UniqueQuestionStorage;
+    public UserStorage UserStorage { get; private set; }
+    public EntryStorage EntryStorage { get; private set; }
+    public GeneralQuestionStorage GeneralQuestionStorage { get; private set; }
+    public UniqueQuestionStorage UniqueQuestionStorage { get; private set; }
 
 
     /// <summary>
@@ -118,6 +136,11 @@ public class ServerStorage : IDisposable
     public void Dispose()
     {
         StopAllDailyNewRandomEntry();
+    }
+
+
+    private ServerStorage()
+    {
     }
 
 

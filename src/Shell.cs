@@ -27,7 +27,6 @@ public static class Shell
             DefaultValueFactory = _ => [ new Uri("http://localhost:2023/") ],
         };
 
-        var rootCmd = new RootCommand();
         var runCmd = new Command("run", "Runs the server.")
         {
             dirArg,
@@ -44,28 +43,55 @@ public static class Shell
             passArg,
         };
 
-        rootCmd.Subcommands.Add(runCmd);
-        rootCmd.Subcommands.Add(clearCmd);
-        rootCmd.Subcommands.Add(newUserCmd);
-
         runCmd.SetAction(p =>
         {
-            var storage = new ServerStorage(p.GetValue(dirArg)!);
+            if (!TryCreateStorage(p.GetValue(dirArg), out var storage))
+            {
+                return;
+            }
+
             var server = new Server(p.GetValue(urlOption)!.Select(u => u.ToString()), storage);
             server.RunForever();
         });
         clearCmd.SetAction(p =>
         {
-            var storage = new ServerStorage(p.GetValue(dirArg)!);
+            if (!TryCreateStorage(p.GetValue(dirArg), out var storage))
+            {
+                return;
+            }
+
             storage.Clear();
             WriteLine("Server storage cleared!");
         });
         newUserCmd.SetAction(p =>
         {
-            var storage = new ServerStorage(p.GetValue(dirArg)!);
-            WriteLine("WIP");
+            if (!TryCreateStorage(p.GetValue(dirArg), out var storage))
+            {
+                return;
+            }
+
+
         });
 
+        var rootCmd = new RootCommand();
+        rootCmd.Subcommands.Add(runCmd);
+        rootCmd.Subcommands.Add(clearCmd);
+        rootCmd.Subcommands.Add(newUserCmd);
         rootCmd.Parse(args).Invoke();
+        return;
+
+
+        static bool TryCreateStorage(string? dir, out ServerStorage storage)
+        {
+            if (dir == null)
+            {
+                Error.WriteLine("Invalid storage location");
+                storage = null!;
+                return false;
+            }
+
+            storage = ServerStorage.CreateIn(dir)!;
+            return storage != null;
+        }
     }
 }
