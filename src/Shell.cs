@@ -128,12 +128,31 @@ public static class Shell
         });
 
 
+        var newEntryCmd = new Command("newEntry", "Creates a new entry from a random question that has not been used so far.")
+        {
+            serverDirArg,
+        };
+        newEntryCmd.SetAction(p =>
+        {
+            if (!TryCreateStorage(p.GetValue(serverDirArg), out var storage))
+            {
+                return;
+            }
+
+            if (!storage.NewRandomEntry())
+            {
+                Error.WriteLine("Could not create new entry: OutOfQuestions");
+            }
+        });
+
+
         var rootCmd = new RootCommand();
         rootCmd.Subcommands.Add(runCmd);
         rootCmd.Subcommands.Add(clearCmd);
         rootCmd.Subcommands.Add(newUserCmd);
         rootCmd.Subcommands.Add(refQuestionsCmd);
         rootCmd.Subcommands.Add(questionCountCmd);
+        rootCmd.Subcommands.Add(newEntryCmd);
         rootCmd.Parse(args).Invoke();
         return;
 
@@ -142,7 +161,7 @@ public static class Shell
         {
             if (dir == null)
             {
-                Error.WriteLine("Invalid storage location");
+                Error.WriteLine("Invalid persistent storage location");
                 storage = null!;
                 return false;
             }
