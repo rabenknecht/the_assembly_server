@@ -76,21 +76,25 @@ public class ServerStorage : IDisposable
     /// Usually happens when we server ran out of unique question.</returns>
     public bool NewRandomEntry()
     {
-        if (!UniqueQuestionStorage.TryGetRandom(out var question)) return false;
+        if (UniqueQuestionStorage.TryGetRandom(out var question, out var voteOptions))
+        {
+            var entry = new EntryRecord
+            (
+                question,
+                DateTimeOffset.Now,
+                voteOptions
+                    .SelectMany(s => s.Trim() == ":u" ? UserStorage.EnumerateUsers : [s])
+                    .Select(v => new VoteOptionRecord(v, []))
+                    .ToArray()
+            );
 
-        var split = question.Split('\n');
-        var entry = new EntryRecord
-        (
-            split[0],
-            DateTimeOffset.Now,
-            split.Skip(1)
-                .SelectMany(s => s.Trim() == ":u" ? UserStorage.EnumerateUsers : [s])
-                .Select(v => new VoteOptionRecord(v, []))
-                .ToArray()
-        );
-
-        EntryStorage.AddLast(entry);
-        return true;
+            EntryStorage.AddLast(entry);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
 

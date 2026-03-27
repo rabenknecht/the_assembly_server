@@ -22,25 +22,31 @@ public class UniqueQuestionStorage
 
     /// <returns>If a unique random question could be fetched from the storage.
     /// This usually fails when all questions are already used!</returns>
-    public bool TryGetRandom(out string result)
+    public bool TryGetRandom(out string question, out ICollection<string> voteOptions)
     {
-        if (UsedQuestionsCount == _storage.TotalQuestionCount)
-        {
-            result = null!;
-            return false;
-        }
-
         // I know this means that not every question has the
         // exact same chance of appearing, and I don't care. This is good enough
         var unusedFile = Random.Shared.Next(_storage.FileCount - EnumAlreadyUsedFilesIndices().Count());
         var actualFile = UnusedToActualFile(unusedFile);
-        var unusedQuestion = Random.Shared.Next(_storage.QuestionCount(unusedFile) - GetAlreadyUsed()[actualFile].Count);
+
+        if (actualFile >= _storage.FileCount)
+        {
+            question = null!;
+            voteOptions = null!;
+            return false;
+        }
+
+        var unusedQuestion = Random.Shared.Next(_storage.QuestionCount(actualFile) - GetAlreadyUsed()[actualFile].Count);
         var actualQuestion = UnusedToActualQuestion(unusedQuestion, actualFile);
 
         File.AppendAllBytes(FilePath, BitConverter.GetBytes(actualFile));
         File.AppendAllBytes(FilePath, BitConverter.GetBytes(actualQuestion));
 
-        result = _storage.GetQuestion(actualFile, actualQuestion);
+        if (!_storage.TryGetQuestion(actualFile, actualQuestion, out question, out voteOptions))
+        {
+            return false;
+        }
+
         return true;
     }
 

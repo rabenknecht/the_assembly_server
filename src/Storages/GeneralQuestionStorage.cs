@@ -76,15 +76,20 @@ public class GeneralQuestionStorage
     public int TotalQuestionCount => GetSingleFiles().Sum(f => f.QuestionCount);
 
 
-    public string GetQuestion(int fileIndex, int questionIndex)
+    public bool TryGetQuestion(int fileIndex, int questionIndex, out string question, out ICollection<string> voteOptions)
     {
         if (fileIndex < 0 || fileIndex >= FileCount
             || questionIndex < 0 || questionIndex >= QuestionCount(fileIndex))
         {
-            throw new IndexOutOfRangeException();
+            question = null!;
+            voteOptions = null!;
+            return false;
         }
 
-        return GetSingleFiles()[fileIndex][questionIndex];
+        var rawQuestionLines = GetSingleFiles()[fileIndex][questionIndex].Split("\n");
+        question = rawQuestionLines[0];
+        voteOptions = rawQuestionLines[1..];
+        return true;
     }
 
 
