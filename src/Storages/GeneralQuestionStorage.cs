@@ -34,7 +34,8 @@ public class GeneralQuestionStorage
     /// <param name="referenceFile">The reference file is used to persistently load and save
     /// the references to the questionFiles loaded into this GeneralQuestionStorage in order
     /// of their indices.</param>
-    public GeneralQuestionStorage(string referenceFile)
+    /// <param name="userFetcher">Used to fetch users from to automatically assert users as voteOption</param>
+    public GeneralQuestionStorage(string referenceFile, Func<IEnumerable<string>> userFetcher)
     {
         if (!File.Exists(referenceFile))
         {
@@ -42,6 +43,7 @@ public class GeneralQuestionStorage
         }
 
         _referenceFile = referenceFile;
+        _userFetcher = userFetcher;
     }
 
 
@@ -86,9 +88,9 @@ public class GeneralQuestionStorage
             return false;
         }
 
-        var rawQuestionLines = GetSingleFiles()[fileIndex][questionIndex].Split("\n");
+        var rawQuestionLines = GetSingleFiles()[fileIndex][questionIndex].Split("\n", StringSplitOptions.TrimEntries);
         question = rawQuestionLines[0];
-        voteOptions = rawQuestionLines[1..];
+        voteOptions = [.. rawQuestionLines.Skip(1).SelectMany(s => s.Trim() == ":u" ? _userFetcher() : [s])];
         return true;
     }
 
@@ -138,6 +140,7 @@ public class GeneralQuestionStorage
 
 
     private readonly string _referenceFile;
+    private readonly Func<IEnumerable<string>> _userFetcher;
     // _lastRefFileWrite == null => This will immediately get updated in GetSingleFiles => Not null
     private IList<SingleFile> _bufferedSingleFiles = null!;
     private DateTime? _lastReferenceFileWrite;

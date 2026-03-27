@@ -48,7 +48,7 @@ public class ServerStorage : IDisposable
         var result = new ServerStorage();
         result.UserStorage = new UserStorage(userDir);
         result.EntryStorage = new EntryStorage(entryFile);
-        result.GeneralQuestionStorage = new GeneralQuestionStorage(questionReferenceFile);
+        result.GeneralQuestionStorage = new GeneralQuestionStorage(questionReferenceFile, () => result.UserStorage.EnumerateUsers);
         result.UniqueQuestionStorage = new UniqueQuestionStorage(result.GeneralQuestionStorage, usedQuestionsFile);
         return result;
     }
@@ -82,10 +82,7 @@ public class ServerStorage : IDisposable
             (
                 question,
                 DateTimeOffset.Now,
-                voteOptions
-                    .SelectMany(s => s.Trim() == ":u" ? UserStorage.EnumerateUsers : [s])
-                    .Select(v => new VoteOptionRecord(v, []))
-                    .ToArray()
+                [.. voteOptions.Select(v => new VoteOptionRecord(v, []))]
             );
 
             EntryStorage.AddLast(entry);
