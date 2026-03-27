@@ -45,19 +45,12 @@ public class ServerStorage : IDisposable
         // EntryStorage creates its own file!
         // if (!File.Exists(entryFile)) File.Create(entryFile).Close();
 
-        var result = new ServerStorage();
-        result.UserStorage = new UserStorage(userDir);
-        result.EntryStorage = new EntryStorage(entryFile);
-        result.GeneralQuestionStorage = new GeneralQuestionStorage(questionReferenceFile, () => result.UserStorage.EnumerateUsers);
-        result.UniqueQuestionStorage = new UniqueQuestionStorage(result.GeneralQuestionStorage, usedQuestionsFile);
-        return result;
+        var userStorage = new UserStorage(userDir);
+        var entryStorage = new EntryStorage(entryFile);
+        var generalQuestionStorage = new GeneralQuestionStorage(questionReferenceFile, () => userStorage.EnumerateUsers);
+        var uniqueQuestionStorage = new UniqueQuestionStorage(generalQuestionStorage, usedQuestionsFile);
+        return new ServerStorage(userStorage, entryStorage, generalQuestionStorage, uniqueQuestionStorage);
     }
-
-
-    public UserStorage UserStorage { get; private set; }
-    public EntryStorage EntryStorage { get; private set; }
-    public GeneralQuestionStorage GeneralQuestionStorage { get; private set; }
-    public UniqueQuestionStorage UniqueQuestionStorage { get; private set; }
 
 
     /// <summary>
@@ -140,11 +133,20 @@ public class ServerStorage : IDisposable
     }
 
 
-    private ServerStorage()
+    private ServerStorage(UserStorage userStorage, EntryStorage entryStorage,
+        GeneralQuestionStorage generalQuestionStorage, UniqueQuestionStorage uniqueQuestionStorage)
     {
+        UserStorage = userStorage;
+        EntryStorage = entryStorage;
+        GeneralQuestionStorage = generalQuestionStorage;
+        UniqueQuestionStorage = uniqueQuestionStorage;
     }
 
 
+    public readonly UserStorage UserStorage;
+    public readonly EntryStorage EntryStorage;
+    public readonly GeneralQuestionStorage GeneralQuestionStorage;
+    public readonly UniqueQuestionStorage UniqueQuestionStorage;
     private readonly List<Thread> _dailyNewEntryRunningThreads = new();
     private readonly List<TimeOnly> _dailyNewEntryTimes = new();
 }
