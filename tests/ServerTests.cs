@@ -55,9 +55,21 @@ public class ServerTests
 
 
     [TestMethod]
+    public async Task PostingBadUser()
+    {
+        var response = await _client.PostAsJsonAsync("users",
+            new VoteOptionRecord("user", [ "pass" ]),
+            TestContext.CancellationToken);
+
+        Assert.AreEqual((int) HttpStatusCode.BadRequest, (int) response.StatusCode);
+    }
+
+
+    [TestMethod]
     public async Task PostingSingleUser()
     {
         var response = await UserPost(new JoinRecord("_1test", "ö12-*#"));
+
         Assert.AreEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
     }
 
