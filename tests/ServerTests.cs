@@ -73,16 +73,25 @@ public class ServerTests
     [TestMethod]
     public async Task PostingSecondSameUser()
     {
-        // TODO: Check if password is unchanged...
         await UserPost(new JoinRecord("1", "jidw-w.a-,"));
         var response = await UserPost(new JoinRecord("1", "newPass"));
 
-        Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        Assert.AreEqual((int) HttpStatusCode.Forbidden, (int) response.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task PostingUserIllegalUsername()
+    {
+        var response = await UserPost(new JoinRecord(">", "newPass"));
+
+        Assert.AreEqual((int) HttpStatusCode.BadRequest, (int) response.StatusCode);
     }
 
     [TestMethod]
     public async Task PostingSecondSameUserAcceptsOldPass()
     {
+        // Can fail because getting users is incorrect
+
         await UserPost(new JoinRecord("test1", ""));
         await UserPost(new JoinRecord("_test2", ""));
         await UserPost(new JoinRecord("-test3", "hello"));
@@ -101,6 +110,8 @@ public class ServerTests
     [TestMethod]
     public async Task PostingSecondSameUserDoesntAcceptNewPass()
     {
+        // Can fail because getting users is incorrect
+
         await UserPost(new JoinRecord("test1", ""));
         await UserPost(new JoinRecord("_test2", ""));
         await UserPost(new JoinRecord("-test3", "hello"));
@@ -109,7 +120,7 @@ public class ServerTests
         _client.AddBasicAuthHeader("-test3", "shat");
         var response = await _client.GetAsync("users", TestContext.CancellationToken);
 
-        Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        Assert.AreEqual((int) HttpStatusCode.Unauthorized, (int) response.StatusCode);
         Assert.AreEqual("", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
     }
 
@@ -123,7 +134,7 @@ public class ServerTests
 
         var response = await _client.GetAsync("users", TestContext.CancellationToken);
 
-        Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        Assert.AreEqual((int) HttpStatusCode.Unauthorized, (int) response.StatusCode);
         Assert.AreEqual("", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
     }
 
@@ -138,7 +149,7 @@ public class ServerTests
         _client.AddBasicAuthHeader("-test3", "hellp");
         var response = await _client.GetAsync("users", TestContext.CancellationToken);
 
-        Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        Assert.AreEqual((int) HttpStatusCode.Unauthorized, (int) response.StatusCode);
         Assert.AreEqual("", await response.Content.ReadAsStringAsync(TestContext.CancellationToken));
     }
 
@@ -289,7 +300,7 @@ public class ServerTests
         _client.AddBasicAuthHeader("user", "");
 
         var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
-        
+
         Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
     }
 
@@ -505,7 +516,7 @@ public class ServerTests
 
         var response = await _client.PostAsync("entry/vote", new StringContent("Wiener", Encoding.UTF8), TestContext.CancellationToken);
 
-        Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        Assert.AreEqual((int) HttpStatusCode.BadRequest, (int) response.StatusCode);
     }
 
 
