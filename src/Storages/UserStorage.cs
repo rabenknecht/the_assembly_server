@@ -51,9 +51,8 @@ public class UserStorage
 
 
     /// <summary>
-    /// Creates a new entry if the user was not added before. Fails if the user already has a pass.
-    /// <param/>
-    /// Returns false if the passed user is illegal.
+    /// Creates a new entry if the user was not added before. Fails if the user already has a pass,
+    /// or if the username is invalid.
     /// </summary>
     public Error Add(string? user, string? pass)
     {
