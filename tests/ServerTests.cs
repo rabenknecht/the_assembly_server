@@ -41,7 +41,7 @@ public class ServerTests
 
         _storage.GeneralQuestionStorage.TryRegisterQuestionFile(QUESTION_FILE);
 
-        _server.RunAsync();
+        _ = _server.RunAsync();
     }
 
 

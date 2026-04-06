@@ -1,199 +1,157 @@
+using System.Diagnostics;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using TheAssembly.Core;
 
 namespace TheAssembly.Server;
 
 
-// TODO: Remove logging
-
 public class Server
 {
-    public Server(string url, ServerStorage storage, bool shouldLog = false)
-        : this([url], storage, shouldLog)
+    public Server(string url, ServerStorage storage)
+        : this([url], storage)
     {
     }
 
 
-    public Server(IEnumerable<string> urls, ServerStorage storage, bool shouldLog = false)
+    public Server(IEnumerable<string> urls, ServerStorage storage)
     {
+        _urls = [.. urls.Select(s => new Uri(s))];
         _storage = storage;
-        _shouldLog = shouldLog;
-        _listener = new HttpListener();
-        // I have no fucking idea how HttpListeners actually authenticate Basic.
-        // It always ends up forbidding every connection, so we just authenticate
-        // the user ourselves
-        _listener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
-        _urls = [.. urls];
     }
 
 
-    public void RunAsync()
+    public async Task RunAsync()
     {
-        var t = new Thread(RunForever);
-        t.Name = "Server Worker";
-        t.Start();
+        await RunUsers();
     }
 
 
-    /// <summary>
-    /// NEVER RETURNS!
-    /// </summary>
-    /// <exception cref="InvalidOperationException">If the server is already running</exception>
-    public void RunForever()
+    private async Task RunUsers()
     {
-        if (_listener.IsListening) throw new InvalidOperationException("Server is already running!");
-
-        foreach (var url in _urls) _listener.Prefixes.Add(url);
-        _listener.Start();
-        Console.WriteLine("Server started. Access me with the following URLs: " 
-            + string.Join(", ", _listener.Prefixes.Select(s => $"\"{s}\"")));
+        var listener = new HttpListener();
+        foreach (var url in _urls)
+        {
+            listener.Prefixes.Add($"{url}users/");
+        }
+        listener.Start();
 
         while (true)
         {
-            // We will multithread at a later point
-            var context = _listener.GetContext();
+            var context = await listener.GetContextAsync();
             var request = context.Request;
-            var response = context.Response;
-            var authUser = GetAuthenticatedUser(request);
-            var requestContent = ExtractRequestContent(request);
-            string responseContent = "";
+            using var response = context.Response;
 
-            if (_shouldLog)
-            {
-                Console.WriteLine($"[{DateTime.Now}] [IN] url:{request.Url?.AbsoluteUri} method:{request.HttpMethod} "
-                    + $"authUser:{authUser} requestContent:{requestContent?.Replace("\n", "\\n")}");
-            }
-
-            // users.POST
-            if (request.HttpMethod == "POST"
-                && CheckLocalRequestUrl(request, "users")
-                && requestContent.TryJsonDeserialize<JoinRecord>(out var joinRecord)
-                && _storage.UserStorage.Add(joinRecord.user, joinRecord.password) == UserStorage.Error.None)
-            {
-                response.StatusCode = (int) HttpStatusCode.OK;
-            }
-
-            // users.GET
-            else if (authUser != null
-                && request.HttpMethod == "GET"
-                && CheckLocalRequestUrl(request, "users"))
-            {
-                responseContent += string.Join('\n', _storage.UserStorage.EnumerateUsers);
-                response.StatusCode = (int) HttpStatusCode.OK;
-            }
-
-            // entry/current.GET
-            else if (authUser != null
-                && request.HttpMethod == "GET"
-                && CheckLocalRequestUrl(request, "entry/current")
-                && _storage.EntryStorage.TryGetLastJson(out var entryJson))
-            {
-                response.StatusCode = (int) HttpStatusCode.OK;
-                responseContent += entryJson;
-            }
-
-            // entry.GET
-            else if (authUser != null
-                && request.HttpMethod == "GET"
-                && CheckLocalRequestUrl(request, "entry"))
-            {
-                response.StatusCode = (int) HttpStatusCode.OK;
-                responseContent += _storage.EntryStorage.GetAllExceptLastJson();
-            }
-
-            // entry.vote.POST
-            else if (authUser != null
-                && request.HttpMethod == "POST"
-                && CheckLocalRequestUrl(request, "entry/vote")
-                && !_storage.EntryStorage.IsEmpty)
-            {
-                var currentEntry = _storage.EntryStorage.GetLast()!;
-                var toVote = currentEntry.voteOptions!.FirstOrDefault(v => v.votingWhat == requestContent);
-                if (toVote == null)
-                {
-                    response.StatusCode = (int) HttpStatusCode.NotFound;
-                }
-                else
-                {
-                    RemoveOldVotes(authUser, currentEntry);
-                    toVote.votedBy = toVote.votedBy!.Add(authUser);
-                    _storage.EntryStorage.UpdateLast(currentEntry);
-                    response.StatusCode = (int) HttpStatusCode.OK;
-                }
-            }
-
-            else
+            if (request.Url == null || listener.Prefixes.Contains(request.Url.ToString()))
             {
                 response.StatusCode = (int) HttpStatusCode.NotFound;
             }
-
-            if (_shouldLog)
+            else if (request.HttpMethod == "POST")
             {
-                Console.WriteLine($"[{DateTime.Now}] [OUT] statusCode:{response.StatusCode} "
-                    + $"responseContent:{responseContent.Replace("\n", "\\n")}");
+                var joinRecord = await GetRequestContentDeserialized<JoinRecord>(request);
+
+                if (joinRecord == null)
+                {
+                    response.StatusCode = (int) HttpStatusCode.BadRequest;
+                    return;
+                }
+
+                var addError = _storage.UserStorage.Add(joinRecord.user, joinRecord.password);
+
+                if (addError == UserStorage.Error.InvalidUsername)
+                {
+                    response.StatusCode = (int) HttpStatusCode.BadRequest;
+                }
+                else if (addError == UserStorage.Error.UserAlreadyExists)
+                {
+                    response.StatusCode = (int) HttpStatusCode.Forbidden;
+                }
+                else if (addError == UserStorage.Error.None)
+                {
+                    response.StatusCode = (int) HttpStatusCode.OK;
+                }
+                else
+                {
+                    response.StatusCode = (int) HttpStatusCode.NotImplemented;
+                }
             }
-
-            response.OutputStream.Write(Encoding.UTF8.GetBytes(responseContent));
-            response.Close();
+            else if (request.HttpMethod == "GET")
+            {
+                if (GetAuthorizedUser(request) == null)
+                {
+                    response.StatusCode = (int) HttpStatusCode.Unauthorized;
+                }
+                else
+                {
+                    response.StatusCode = (int) HttpStatusCode.OK;
+                    await SetResponseContent(response, string.Join('\n', _storage.UserStorage.EnumerateUsers));
+                }
+            }
+            else
+            {
+                response.StatusCode = (int) HttpStatusCode.MethodNotAllowed;
+            }
         }
-    }
-
-
-    public bool IsRunning() => _listener.IsListening;
-
-
-    public void StopIfRunning()
-    {
-        if (IsRunning()) _listener.Stop();
     }
 
 
     /// <summary>
-    /// Returns the authenticated user of the request.
+    /// Recommended to be called only once to collect the content into a variable
     /// </summary>
-    private string? GetAuthenticatedUser(HttpListenerRequest request)
+    private async Task<string> GetRequestContent(HttpListenerRequest of)
     {
-        var authHeader = request.Headers[nameof(HttpRequestHeader.Authorization)];
-        if (authHeader == null) return null;
-        if (!authHeader.TryBasicAuthHeaderToUserPass(out var user, out var pass)) return null;
-        if (!_storage.UserStorage.Correct(user, pass)) return null;
-        return user;
+        using var stream = of.InputStream;
+        using var reader = new StreamReader(stream, ENCODING);
+        return await reader.ReadToEndAsync();
     }
 
 
-    private string? ExtractRequestContent(HttpListenerRequest request)
+    /// <summary>
+    /// Recommended to be called only once to collect the content into a variable
+    /// </summary>
+    private async Task<T?> GetRequestContentDeserialized<T>(HttpListenerRequest of)
+        where T : class
     {
-        if (!request.HasEntityBody) return null;
-        using var stream = request.InputStream;
-        using var reader = new StreamReader(stream, request.ContentEncoding);
-        return reader.ReadToEnd();
-    }
+        Debug.Assert(ENCODING == Encoding.UTF8, $"Json deserialization does not support non utf8");
 
-
-    private bool CheckLocalRequestUrl(HttpListenerRequest request, string localUrl)
-    {
-        return _urls.Any(u =>
+        if (of.ContentEncoding != Encoding.UTF8)
         {
-            var expected = $"{u}{localUrl}";
-            return expected == request.Url?.AbsoluteUri;
-        });
-    }
-
-
-    private void RemoveOldVotes(string ofUser, EntryRecord inEntry)
-    {
-        foreach (var voteOption in inEntry.voteOptions!)
-        {
-            voteOption.votedBy = voteOption.votedBy!
-                .Where(s => s != ofUser)
-                .ToArray();
+            return null;
         }
+
+        using var stream = of.InputStream;
+        return await JsonSerializer.DeserializeAsync<T>(stream);
     }
 
 
-    private readonly bool _shouldLog;
-    private readonly HttpListener _listener;
-    private readonly IReadOnlyCollection<string> _urls;
+    /// <summary>
+    /// Recommended to be called only once
+    /// </summary>
+    private async Task SetResponseContent(HttpListenerResponse of, string toWhat)
+    {
+        using var stream = of.OutputStream;
+        using var writer = new StreamWriter(stream, ENCODING);
+        await writer.WriteAsync(toWhat);
+    }
+
+
+    /// <returns>The user those authentication credentials have been passed along a HttpListenerRequest</returns>
+    private string? GetAuthorizedUser(HttpListenerRequest ofRequest)
+    {
+        var authHeader = ofRequest.Headers[nameof(HttpRequestHeader.Authorization)];
+        return authHeader != null
+            && authHeader.TryBasicAuthHeaderToUserPass(out var user, out var pass)
+            && _storage.UserStorage.Correct(user, pass)
+            ? user
+            : null;
+    }
+
+
+    // JsonSerializer only supports UTF8, so we don't accept anything else
+    private static readonly Encoding ENCODING = Encoding.UTF8;
+
+
+    private readonly Uri[] _urls;
     private readonly ServerStorage _storage;
 }

@@ -46,7 +46,8 @@ public static class Shell
             }
 
             var server = new Server(p.GetValue(urlOption)!.Select(u => u.ToString()), storage);
-            server.RunForever();
+            _ = server.RunAsync();
+            while (true) {}
         });
 
 
