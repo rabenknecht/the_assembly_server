@@ -313,7 +313,28 @@ public class ServerTests
 
         var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
 
-        Assert.AreNotEqual((int) HttpStatusCode.OK, (int) response.StatusCode);
+        Assert.AreEqual((int) HttpStatusCode.NoContent, (int) response.StatusCode);
+    }
+
+
+    [TestMethod]
+    public async Task GetCurrentEntryUnauthorized()
+    {
+        // Create user and authenticate client
+        await UserPost(new JoinRecord("user", "test"));
+        _client.AddBasicAuthHeader("user", "");
+
+        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
+            + "No\n"
+            + "Yes\n"
+            + "Sometimes");
+        _storage.NewRandomEntry();
+
+        var response = await _client.GetAsync("entry/current", TestContext.CancellationToken);
+        var responseText = await response.Content.ReadAsStringAsync(TestContext.CancellationToken);
+
+        Assert.AreEqual((int) HttpStatusCode.Unauthorized, (int) response.StatusCode);
+        Assert.AreEqual("", responseText);
     }
 
 
