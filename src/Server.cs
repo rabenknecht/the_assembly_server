@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Linq;
 using TheAssembly.Core;
 
 namespace TheAssembly.Server;
@@ -22,20 +23,22 @@ public class Server
     }
 
 
+    /// <summary>
+    /// NEVER FINISHES
+    /// </summary>
     public async Task RunAsync()
     {
+        _ = RunCurrentEntries();
         await RunUsers();
     }
 
 
+    /// <summary>
+    /// NEVER FINISHES
+    /// </summary>
     private async Task RunUsers()
     {
-        var listener = new HttpListener();
-        foreach (var url in _urls)
-        {
-            listener.Prefixes.Add($"{url}users/");
-        }
-        listener.Start();
+        var listener = GetStartedListener("users/");
 
         while (true)
         {
@@ -43,7 +46,7 @@ public class Server
             var request = context.Request;
             using var response = context.Response;
 
-            if (request.Url == null || listener.Prefixes.Contains(request.Url.ToString()))
+            if (request.Url == null)
             {
                 response.StatusCode = (int) HttpStatusCode.NotFound;
             }
@@ -54,7 +57,7 @@ public class Server
                 if (joinRecord == null)
                 {
                     response.StatusCode = (int) HttpStatusCode.BadRequest;
-                    return;
+                    continue;
                 }
 
                 var addError = _storage.UserStorage.Add(joinRecord.user, joinRecord.password);
@@ -93,6 +96,100 @@ public class Server
                 response.StatusCode = (int) HttpStatusCode.MethodNotAllowed;
             }
         }
+    }
+
+
+    /// <summary>
+    /// NEVER FINISHES
+    /// </summary>
+    private async Task RunCurrentEntries()
+    {
+        var listener = GetStartedListener("entry/current/");
+
+        while (true)
+        {
+            var context = await listener.GetContextAsync();
+            var request = context.Request;
+            using var response = context.Response;
+
+            if (request?.Url == null)
+            {
+                response.StatusCode = (int) HttpStatusCode.NotFound;
+            }
+            else if (request.HttpMethod == "POST")
+            {
+                var authUser = GetAuthorizedUser(request);
+
+                if (authUser == null)
+                {
+                    response.StatusCode = (int) HttpStatusCode.Unauthorized;
+                    continue;
+                }
+
+                var lastEntry = _storage.EntryStorage.GetLast();
+
+                if (lastEntry == null)
+                {
+                    // TODO: Better code? Also test that
+                    response.StatusCode = (int) HttpStatusCode.NotAcceptable;
+                    continue;
+                }
+
+                var voteRequest = await GetRequestContent(request);
+                var voteRequestIndex = lastEntry.voteOptions!.IndexOf(v => v.votingWhat == voteRequest);
+
+                if (voteRequestIndex == -1)
+                {
+                    response.StatusCode = (int) HttpStatusCode.BadRequest;
+                    continue;
+                }
+
+                lastEntry.RemoveVote(authUser);
+                lastEntry.Vote(authUser, voteRequestIndex);
+
+                response.StatusCode = (int) HttpStatusCode.OK;
+            }
+            else if (request.HttpMethod == "GET")
+            {
+                var authUser = GetAuthorizedUser(request);
+
+                if (authUser == null)
+                {
+                    response.StatusCode = (int) HttpStatusCode.Unauthorized;
+                    continue;
+                }
+
+                var lastEntryJson = _storage.EntryStorage.GetLastJson();
+
+                if (lastEntryJson == null)
+                {
+                    response.StatusCode = (int) HttpStatusCode.NoContent;
+                    continue;
+                }
+
+                await SetResponseContent(response, lastEntryJson);
+                response.StatusCode = (int) HttpStatusCode.OK;
+            }
+            else
+            {
+                response.StatusCode = (int) HttpStatusCode.MethodNotAllowed;
+            }
+        }
+    }
+
+
+    private HttpListener GetStartedListener(string postfix)
+    {
+        Debug.Assert(!postfix.StartsWith('/'));
+        Debug.Assert(postfix.EndsWith('/'));
+
+        var listener = new HttpListener();
+        foreach (var url in _urls)
+        {
+            listener.Prefixes.Add($"{url}{postfix}");
+        }
+        listener.Start();
+        return listener;
     }
 
 
