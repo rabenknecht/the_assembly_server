@@ -368,7 +368,7 @@ public class ServerTests
 
 
     [TestMethod]
-    public async Task GetCurrentEntryAfterVoting()
+    public async Task GetCurrentEntryDifficultQuestionFile()
     {
         // Create user and authenticate client
         await UserPost(new JoinRecord("user", ""));
