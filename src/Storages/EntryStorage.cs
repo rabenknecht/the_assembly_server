@@ -48,10 +48,15 @@ public class EntryStorage
     }
 
 
+    /// <returns>The json-array of all EntryRecords stored in this storage,
+    /// ignoring the last element. Returns an empty json array when no or only
+    /// one element exists.</returns>
     public string GetAllExceptLastJson()
     {
         var saved = GetSaved();
-        return JsonSerializer.Serialize(saved.SubArray(0, saved.Length - 1));
+        return saved.Length == 0
+            ? JsonSerializer.Serialize<EntryRecord[]>([])
+            : JsonSerializer.Serialize(saved.SubArray(0, saved.Length - 1));
     }
 
 
