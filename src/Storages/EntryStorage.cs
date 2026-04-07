@@ -26,6 +26,7 @@ public class EntryStorage
     }
 
 
+    /// <returns>The last entries json, or null when no entries are stored.</returns>
     public string? GetLastJson()
     {
         var last = GetLast();
