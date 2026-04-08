@@ -29,6 +29,7 @@ public class Server
     public async Task RunAsync()
     {
         _ = RunCurrentEntries();
+        _ = RunEntries();
         await RunUsers();
     }
 
@@ -168,6 +169,39 @@ public class Server
                 }
 
                 await SetResponseContent(response, lastEntryJson);
+                response.StatusCode = (int) HttpStatusCode.OK;
+            }
+            else
+            {
+                response.StatusCode = (int) HttpStatusCode.MethodNotAllowed;
+            }
+        }
+    }
+
+
+    private async Task RunEntries()
+    {
+        var listener = GetStartedListener("entry/");
+
+        while (true)
+        {
+            var context = await listener.GetContextAsync();
+            var request = context.Request;
+            using var response = context.Response;
+
+            if (request.Url == null)
+            {
+                response.StatusCode = (int) HttpStatusCode.NotFound;
+            }
+            else if (request.HttpMethod == "GET")
+            {
+                if (GetAuthorizedUser(request) == null)
+                {
+                    response.StatusCode = (int) HttpStatusCode.Unauthorized;
+                    continue;
+                }
+
+                await SetResponseContent(response, _storage.EntryStorage.GetAllExceptLastJson());
                 response.StatusCode = (int) HttpStatusCode.OK;
             }
             else
