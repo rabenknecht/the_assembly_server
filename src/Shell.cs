@@ -1,63 +1,70 @@
 ﻿using System.CommandLine;
-using TheAssembly.Core;
 using static System.Console;
 
 namespace TheAssembly.Server;
 
 public static class Shell
 {
+    private static readonly Argument<string> _serverDirArg = new("serverDirectory")
+    {
+        Description = "The directory used as persistent storage for the server.",
+    };
+
+    private static readonly Argument<string[]> _questionFilesArg = new("questionFiles")
+    {
+        Description = "The questionFiles that the server should be able to fetch questions from.\n"
+            + "The repositories readme contains more info about questionFIle formatting",
+    };
+
+    private static readonly Option<Uri[]> _urlOption = new("--url", "-u")
+    {
+        Description = "The urls over which the server should be accessable.",
+        DefaultValueFactory = _ => [ new Uri("http://localhost:2023/") ],
+    };
+
+    private static readonly Argument<string> _userArg = new("username")
+    {
+        Description = "The username of the user",
+    };
+
+    private static readonly Argument<string> _passArg = new("password")
+    {
+        Description = "The password of the user",
+        DefaultValueFactory = _ => "",
+    };
+
+
     public static void Main(string[] args)
     {
-        var serverDirArg = new Argument<string>("serverDirectory")
-        {
-            Description = "The directory used as persistent storage for the server.",
-        };
-        var userArg = new Argument<string>("username")
-        {
-            Description = "The username of the user to create",
-        };
-        var passArg = new Argument<string>("password")
-        {
-            Description = "The password of the user to create",
-            DefaultValueFactory = _ => "",
-        };
-        var questionFilesArg = new Argument<string[]>("questionFiles")
-        {
-            Description = "The questionFiles that the server should be able to fetch questions from. "
-                + "For more info about formatting, check the repositories readme",
-        };
-        var urlOption = new Option<Uri[]>("--url", "-u")
-        {
-            Description = "The urls over which the server should be accessable.",
-            DefaultValueFactory = _ => [ new Uri("http://localhost:2023/") ],
-        };
-
-
         var runCmd = new Command("run", "Runs the server.")
         {
-            serverDirArg,
-            urlOption,
+            _serverDirArg,
+            _urlOption,
         };
         runCmd.SetAction(p =>
         {
-            if (!TryCreateStorage(p.GetValue(serverDirArg), out var storage))
+            if (!TryCreateStorage(p.GetValue(_serverDirArg), out var storage))
             {
                 return;
             }
 
-            var server = new Server(p.GetValue(urlOption)!.Select(u => u.ToString()), storage);
+            var server = new Server(p.GetValue(_urlOption)!.Select(u => u.ToString()), storage);
+            // TODO: How to run async stuff in sync?
             _ = server.RunAsync();
-            while (true) {}
+            while (true)
+            {
+                Thread.Sleep(int.MaxValue);
+            }
         });
 
 
         var clearCmd = new Command("clear", "Clears the server storage.")
         {
-            serverDirArg,
+            _serverDirArg,
         };
         clearCmd.SetAction(p =>
         {
-            if (!TryCreateStorage(p.GetValue(serverDirArg), out var storage))
+            if (!TryCreateStorage(p.GetValue(_serverDirArg), out var storage))
             {
                 return;
             }
@@ -69,18 +76,18 @@ public static class Shell
 
         var newUserCmd = new Command("newUser", "Creates a new user.")
         {
-            serverDirArg,
-            userArg,
-            passArg,
+            _serverDirArg,
+            _userArg,
+            _passArg,
         };
         newUserCmd.SetAction(p =>
         {
-            if (!TryCreateStorage(p.GetValue(serverDirArg), out var storage))
+            if (!TryCreateStorage(p.GetValue(_serverDirArg), out var storage))
             {
                 return;
             }
 
-            var result = storage.UserStorage.Add(p.GetValue(userArg), p.GetValue(passArg));
+            var result = storage.UserStorage.Add(p.GetValue(_userArg), p.GetValue(_passArg));
             if (result != UserStorage.Error.None)
             {
                 Error.WriteLine("Could not add user: " + result.ToString());
@@ -90,17 +97,17 @@ public static class Shell
 
         var refQuestionsCmd = new Command("refQuestions", "References questionFiles on the server.")
         {
-            serverDirArg,
-            questionFilesArg,
+            _serverDirArg,
+            _questionFilesArg,
         };
         refQuestionsCmd.SetAction(p =>
         {
-            if (!TryCreateStorage(p.GetValue(serverDirArg), out var storage))
+            if (!TryCreateStorage(p.GetValue(_serverDirArg), out var storage))
             {
                 return;
             }
 
-            foreach (var file in p.GetValue(questionFilesArg) ?? [])
+            foreach (var file in p.GetValue(_questionFilesArg) ?? [])
             {
                 var result = storage.GeneralQuestionStorage.TryRegisterQuestionFile(file);
                 if (result != GeneralQuestionStorage.Error.None)
@@ -113,11 +120,11 @@ public static class Shell
 
         var questionCountCmd = new Command("questionCount", "Prints the total number of questions currently accessable to the server.")
         {
-            serverDirArg,
+            _serverDirArg,
         };
         questionCountCmd.SetAction(p =>
         {
-            if (!TryCreateStorage(p.GetValue(serverDirArg), out var storage))
+            if (!TryCreateStorage(p.GetValue(_serverDirArg), out var storage))
             {
                 return;
             }
@@ -131,11 +138,11 @@ public static class Shell
 
         var newEntryCmd = new Command("newEntry", "Creates a new entry from a random question that has not been used so far.")
         {
-            serverDirArg,
+            _serverDirArg,
         };
         newEntryCmd.SetAction(p =>
         {
-            if (!TryCreateStorage(p.GetValue(serverDirArg), out var storage))
+            if (!TryCreateStorage(p.GetValue(_serverDirArg), out var storage))
             {
                 return;
             }
