@@ -19,27 +19,27 @@ public class ServerTests
     private static ServerStorage _altStorage = null!;
     private static Server _server = null!;
 
-    private const string TEST_DIR = "/tmp/the_assembly_testing/servertests";
-    private const string SERVER_DIR = $"{TEST_DIR}/serverDir";
-    private const string QUESTION_FILE = $"{TEST_DIR}/questionFile";
-    private const string Url = "http://localhost:2023/3/";
+    private static string _questionFile = null!;
+
+    private const string URL = "http://localhost:2023/28974/";
 
 
     [ClassInitialize]
     public static void ClassInit(TestContext context)
     {
-        if (Directory.Exists(TEST_DIR)) Directory.Delete(TEST_DIR, true);
-        if (Directory.Exists(SERVER_DIR)) Directory.Delete(SERVER_DIR, true);
+        var testDir = Directory.CreateTempSubdirectory().FullName;
+        var serverDir = Path.Combine(testDir, "serverStorage");
+        _questionFile = Path.Combine(testDir, "questions");
 
-        Directory.CreateDirectory(TEST_DIR); // We need the testdir for the questionfile
-        File.WriteAllText(QUESTION_FILE, string.Empty);
+        Directory.CreateDirectory(serverDir);
+        File.WriteAllText(_questionFile, "");
 
-        _storage = ServerStorage.CreateIn(SERVER_DIR)!;
-        _altStorage = ServerStorage.CreateIn(SERVER_DIR)!;
-        _server = new Server(Url, _storage);
-        _client = new HttpClient() { BaseAddress = new Uri(Url) };
+        _storage = ServerStorage.CreateIn(serverDir)!;
+        _altStorage = ServerStorage.CreateIn(serverDir)!;
+        _server = new Server(URL, _storage);
+        _client = new HttpClient() { BaseAddress = new Uri(URL) };
 
-        _storage.GeneralQuestionStorage.TryRegisterQuestionFile(QUESTION_FILE);
+        _storage.GeneralQuestionStorage.TryRegisterQuestionFile(_questionFile);
 
         _ = _server.RunAsync();
     }
@@ -48,7 +48,7 @@ public class ServerTests
     [TestInitialize]
     public void TestInit()
     {
-        File.WriteAllText(QUESTION_FILE, string.Empty);
+        File.WriteAllText(_questionFile, string.Empty);
         _storage.Clear();
         _client.DefaultRequestHeaders.Authorization = null;
     }
@@ -205,7 +205,7 @@ public class ServerTests
     [TestMethod]
     public async Task NewRandomEntryWhenQuestionsAvailable()
     {
-        File.WriteAllText(QUESTION_FILE, "Q1\n"
+        File.WriteAllText(_questionFile, "Q1\n"
             + "Q1V1\n"
             + "Q1V2\n"
             + "\n"
@@ -230,7 +230,7 @@ public class ServerTests
     [TestMethod]
     public async Task NewRandomEntryWhenNoQuestionsAvailable()
     {
-        File.WriteAllText(QUESTION_FILE, "Q1\n"
+        File.WriteAllText(_questionFile, "Q1\n"
             + "Q1V1\n"
             + "Q1V2\n"
             + "\n"
@@ -256,7 +256,7 @@ public class ServerTests
     [TestMethod]
     public async Task NewRandomEntryWhenQuestionsAvailableAltStorageMixed()
     {
-        File.WriteAllText(QUESTION_FILE, "Q1\n"
+        File.WriteAllText(_questionFile, "Q1\n"
             + "Q1V1\n"
             + "Q1V2\n"
             + "\n"
@@ -281,7 +281,7 @@ public class ServerTests
     [TestMethod]
     public async Task NewRandomEntryWhenNoQuestionsAvailableAltStorageMixed()
     {
-        File.WriteAllText(QUESTION_FILE, "Q1\n"
+        File.WriteAllText(_questionFile, "Q1\n"
             + "Q1V1\n"
             + "Q1V2\n"
             + "\n"
@@ -324,7 +324,7 @@ public class ServerTests
         await UserPost(new JoinRecord("user", "test"));
         _client.AddBasicAuthHeader("user", "");
 
-        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
+        File.WriteAllText(_questionFile, "Do you still love me?\n"
             + "No\n"
             + "Yes\n"
             + "Sometimes");
@@ -345,7 +345,7 @@ public class ServerTests
         await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
-        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
+        File.WriteAllText(_questionFile, "Do you still love me?\n"
             + "No\n"
             + "Yes\n"
             + "Sometimes");
@@ -374,7 +374,7 @@ public class ServerTests
         await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
-        File.WriteAllText(QUESTION_FILE, "\tDo you still love me?\n"
+        File.WriteAllText(_questionFile, "\tDo you still love me?\n"
             + "    No\n"
             + "Yes    \n"
             + "Sometimes\n ");
@@ -406,7 +406,7 @@ public class ServerTests
         await UserPost(new JoinRecord("user2", ""));
         await UserPost(new JoinRecord("user3", ""));
 
-        File.WriteAllText(QUESTION_FILE, "Userquestion?\n"
+        File.WriteAllText(_questionFile, "Userquestion?\n"
             + ":u\n"
             + "Nobody");
         _storage.NewRandomEntry();
@@ -434,14 +434,14 @@ public class ServerTests
         await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
-        File.WriteAllText(QUESTION_FILE, "Who sucks more?\n"
+        File.WriteAllText(_questionFile, "Who sucks more?\n"
             + "Price\n"
             + "Picard\n"
             + "Susane\n"
             + "Your mother");
         _storage.NewRandomEntry();
 
-        File.AppendAllText(QUESTION_FILE, "\n\nTest\n"
+        File.AppendAllText(_questionFile, "\n\nTest\n"
             + "test1\n"
             + "test2\n");
         _storage.NewRandomEntry();
@@ -473,7 +473,7 @@ public class ServerTests
         await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
-        File.WriteAllText(QUESTION_FILE, "Q1\n"
+        File.WriteAllText(_questionFile, "Q1\n"
             + "Q1V1\n"
             + "Q1V2\n"
             + "\n"
@@ -522,7 +522,7 @@ public class ServerTests
         await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
-        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
+        File.WriteAllText(_questionFile, "Do you still love me?\n"
             + "No\n"
             + "Yes\n"
             + "Sometimes\n");
@@ -541,7 +541,7 @@ public class ServerTests
         await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
-        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
+        File.WriteAllText(_questionFile, "Do you still love me?\n"
             + "No\n"
             + "Yes\n"
             + "Sometimes\n");
@@ -560,7 +560,7 @@ public class ServerTests
         await UserPost(new JoinRecord("user", ""));
         _client.AddBasicAuthHeader("user", "");
 
-        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
+        File.WriteAllText(_questionFile, "Do you still love me?\n"
             + "No\n"
             + "Yes\n"
             + "Sometimes\n");
@@ -584,7 +584,7 @@ public class ServerTests
         await UserPost(new JoinRecord("user5", ""));
         await UserPost(new JoinRecord("user6", ""));
 
-        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
+        File.WriteAllText(_questionFile, "Do you still love me?\n"
             + "No\n"
             + "Yes\n"
             + "Sometimes\n");
@@ -620,7 +620,7 @@ public class ServerTests
         // Create user and authenticate client
         await UserPost(new JoinRecord("user1", ""));
 
-        File.WriteAllText(QUESTION_FILE, "Do you still love me?\n"
+        File.WriteAllText(_questionFile, "Do you still love me?\n"
             + "No\n"
             + "Yes\n"
             + "Sometimes\n");
