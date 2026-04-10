@@ -11,42 +11,9 @@ namespace TheAssembly.Server;
 public class UserStorage
 {
     /// <param name="baseDir">Which directory can the PassStorage use to save passwords.</param>
-    public UserStorage(string baseDir)
+    internal UserStorage(string baseDir)
     {
         _baseDir = baseDir ?? throw new ArgumentNullException(nameof(baseDir));
-    }
-
-
-    /// <returns>If the username is legal, and has no pass already in storage</returns>
-    public bool CanBeNew(string? user)
-    {
-        if (!IsUserLegal(user)) return false;
-        return !File.Exists(PassFileFor(user!));
-    }
-
-
-    public bool Exists(string? user)
-    {
-        if (!IsUserLegal(user)) return false;
-        return File.Exists(PassFileFor(user!));
-    }
-
-
-    /// <summary>
-    /// Updates the pass for the passed user. Creates a new entry if the user
-    /// had no password before.
-    /// <param/>
-    /// Returns false if the passed user is illegal.
-    /// </summary>
-    public Error AddOrUpdate(string? user, string? pass)
-    {
-        if (!IsUserLegal(user)) return Error.InvalidUsername;
-
-        var salt = RandomNumberGenerator.GetBytes(SALT_LENGTH);
-        var hash = HashPass(pass ?? "", salt, user!);
-        File.WriteAllBytes(PassFileFor(user!), salt.Concat(hash));
-
-        return Error.None;
     }
 
 
@@ -89,19 +56,9 @@ public class UserStorage
             .Select(p => p.Split(Path.DirectorySeparatorChar)[^1]);
 
 
-    public ICollection<string> CollectUsers => [.. EnumerateUsers];
-
-
     public void Clear()
     {
         foreach (var file in Directory.GetFiles(_baseDir)) File.Delete(file);
-    }
-
-
-    public bool IsUserLegal(string? user)
-    {
-        const string legalChars = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
-        return user != null && user.All(legalChars.Contains);
     }
 
 
@@ -110,6 +67,13 @@ public class UserStorage
         None = 0,
         InvalidUsername = 0x1,
         UserAlreadyExists = 0x2,
+    }
+
+
+    private bool IsUserLegal(string? user)
+    {
+        const string legalChars = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
+        return user != null && user.All(legalChars.Contains);
     }
 
 

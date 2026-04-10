@@ -10,14 +10,11 @@ public class UniqueQuestionStorage
 {
     /// <param name="storage">From where to fetch questions.</param>
     /// <param name="filePath">The file is needed to store what questions are already used or still available.</param>
-    public UniqueQuestionStorage(GeneralQuestionStorage storage, string filePath)
+    internal UniqueQuestionStorage(GeneralQuestionStorage storage, string filePath)
     {
         _storage = storage;
-        FilePath = filePath;
+        _filePath = filePath;
     }
-
-
-    public readonly string FilePath;
 
 
     /// <returns>If a unique random question could be fetched from the storage.
@@ -39,8 +36,8 @@ public class UniqueQuestionStorage
         var unusedQuestion = Random.Shared.Next(_storage.QuestionCount(actualFile) - GetAlreadyUsed()[actualFile].Count);
         var actualQuestion = UnusedToActualQuestion(unusedQuestion, actualFile);
 
-        File.AppendAllBytes(FilePath, BitConverter.GetBytes(actualFile));
-        File.AppendAllBytes(FilePath, BitConverter.GetBytes(actualQuestion));
+        File.AppendAllBytes(_filePath, BitConverter.GetBytes(actualFile));
+        File.AppendAllBytes(_filePath, BitConverter.GetBytes(actualQuestion));
 
         if (!_storage.TryGetQuestion(actualFile, actualQuestion, out question, out voteOptions))
         {
@@ -62,9 +59,10 @@ public class UniqueQuestionStorage
 
     public int UnusedQuestionsCount => _storage.TotalQuestionCount - UsedQuestionsCount;
 
+
     public void Clear()
     {
-        File.WriteAllBytes(FilePath, []);
+        File.WriteAllBytes(_filePath, []);
     }
 
 
@@ -108,7 +106,7 @@ public class UniqueQuestionStorage
     /// </summary>
     private List<int>[] GetAlreadyUsed()
     {
-        var newLastAlreadyUsedWrite = File.GetLastWriteTime(FilePath);
+        var newLastAlreadyUsedWrite = File.GetLastWriteTime(_filePath);
         if (newLastAlreadyUsedWrite == _lastAlreadyUsedWrite)
         {
             return _alreadyUsed;
@@ -117,7 +115,7 @@ public class UniqueQuestionStorage
         {
             _lastAlreadyUsedWrite = newLastAlreadyUsedWrite;
 
-            var alreadyUsedFileBytes = File.ReadAllBytes(FilePath);
+            var alreadyUsedFileBytes = File.ReadAllBytes(_filePath);
             if ((alreadyUsedFileBytes.Length & 0b111) != 0) // divisible by 8?
             {
                 throw new InvalidOperationException("Incorrect byte count of UsedQuestionsFile! (must be divisible through 8)");
@@ -150,6 +148,7 @@ public class UniqueQuestionStorage
     }
 
 
+    private readonly string _filePath;
     private readonly GeneralQuestionStorage _storage;
     // Use GetAlreadyUsed to access this instead to ensure this stays updated!
     private List<int>[] _alreadyUsed = [];

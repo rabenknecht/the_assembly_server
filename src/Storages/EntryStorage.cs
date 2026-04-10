@@ -5,7 +5,7 @@ namespace TheAssembly.Server;
 
 public class EntryStorage
 {
-    public EntryStorage(string filePath)
+    internal EntryStorage(string filePath)
     {
         if (!File.Exists(filePath))
         {
@@ -35,13 +35,6 @@ public class EntryStorage
     }
 
 
-    public bool TryGetLastJson(out string result)
-    {
-        result = GetLastJson()!;
-        return result != null;
-    }
-
-
     public EntryRecord? GetLast()
     {
         return GetSaved().GetLastOr(null);
@@ -53,6 +46,7 @@ public class EntryStorage
     /// one element exists.</returns>
     public string GetAllExceptLastJson()
     {
+        // TODO: Test edge case: Get entry/ when no entries exist
         var saved = GetSaved();
         return saved.Length == 0
             ? JsonSerializer.Serialize<EntryRecord[]>([])
@@ -68,12 +62,6 @@ public class EntryStorage
         var serialized = JsonSerializer.Serialize(saved);
         File.WriteAllText(FilePath, serialized);
     }
-
-
-    public int EntryCount => GetSaved().Length;
-
-
-    public bool IsEmpty => GetSaved().Length == 0;
 
 
     public void Clear()

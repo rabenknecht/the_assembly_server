@@ -35,7 +35,7 @@ public class GeneralQuestionStorage
     /// the references to the questionFiles loaded into this GeneralQuestionStorage in order
     /// of their indices.</param>
     /// <param name="userFetcher">Used to fetch users from to automatically assert users as voteOption</param>
-    public GeneralQuestionStorage(string referenceFile, Func<IEnumerable<string>> userFetcher)
+    internal GeneralQuestionStorage(string referenceFile, Func<IEnumerable<string>> userFetcher)
     {
         if (!File.Exists(referenceFile))
         {
@@ -45,9 +45,6 @@ public class GeneralQuestionStorage
         _referenceFile = referenceFile;
         _userFetcher = userFetcher;
     }
-
-
-    public IEnumerable<string> FilePaths => GetSingleFiles().Select(f => f.FilePath);
 
 
     public int FileCount => GetSingleFiles().Count;
