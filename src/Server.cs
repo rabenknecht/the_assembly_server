@@ -127,7 +127,7 @@ public class Server
                     continue;
                 }
 
-                var lastEntry = _storage.EntryStorage.GetLast();
+                var lastEntry = await _storage.EntryStorage.GetLast();
 
                 if (lastEntry == null)
                 {
@@ -160,7 +160,7 @@ public class Server
                     continue;
                 }
 
-                var lastEntryJson = _storage.EntryStorage.GetLastJson();
+                var lastEntryJson = await _storage.EntryStorage.GetLastJson();
 
                 if (lastEntryJson == null)
                 {
@@ -201,7 +201,7 @@ public class Server
                     continue;
                 }
 
-                await SetResponseContent(response, _storage.EntryStorage.GetAllExceptLastJson());
+                await SetResponseContent(response, await _storage.EntryStorage.GetAllExceptLastJson());
                 response.StatusCode = (int) HttpStatusCode.OK;
             }
             else

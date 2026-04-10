@@ -17,7 +17,8 @@ public class ServerStorage : IDisposable
         var userDir = Path.Combine(directory, "passwords");
         var usedQuestionsFile = Path.Combine(directory, "usedQuestions");
         var questionReferenceFile = Path.Combine(directory, "questionFileRefs");
-        var entryFile = Path.Combine(directory, "entries");
+        var currentEntryFile = Path.Combine(directory, "currentEntry");
+        var nonCurrentEntriesFile = Path.Combine(directory, "nonCurrentEntries");
 
         if (Directory.Exists(directory))
         {
@@ -27,7 +28,7 @@ public class ServerStorage : IDisposable
             existingDirs.Remove(userDir);
             existingFiles.Remove(usedQuestionsFile);
             existingFiles.Remove(questionReferenceFile);
-            existingFiles.Remove(entryFile);
+            existingFiles.Remove(currentEntryFile);
 
             if (existingDirs.Count != 0 || existingFiles.Count != 0)
             {
@@ -42,11 +43,10 @@ public class ServerStorage : IDisposable
         if (!Directory.Exists(userDir)) Directory.CreateDirectory(userDir);
         if (!File.Exists(usedQuestionsFile)) File.Create(usedQuestionsFile).Close();
         if (!File.Exists(questionReferenceFile)) File.Create(questionReferenceFile).Close();
-        // EntryStorage creates its own file!
-        // if (!File.Exists(entryFile)) File.Create(entryFile).Close();
+        // EntryStorage creates its own files!
 
         var userStorage = new UserStorage(userDir);
-        var entryStorage = new EntryStorage(entryFile);
+        var entryStorage = new EntryStorage(currentEntryFile, nonCurrentEntriesFile);
         var generalQuestionStorage = new GeneralQuestionStorage(questionReferenceFile, () => userStorage.EnumerateUsers);
         var uniqueQuestionStorage = new UniqueQuestionStorage(generalQuestionStorage, usedQuestionsFile);
         return new ServerStorage(userStorage, entryStorage, generalQuestionStorage, uniqueQuestionStorage);
